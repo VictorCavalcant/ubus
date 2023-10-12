@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:ubus/components/BottomMenuItem.dart';
-import 'package:ubus/pages/SearchPage.dart';
+import 'package:ubus/components/BottomMain.dart';
+import 'package:ubus/components/NearStops.dart';
 
 class BottomMenu extends StatelessWidget {
-  const BottomMenu({super.key});
+  const BottomMenu(
+    this.NP_visible,this.showNS, this.hideNS
+  );
+
+  final bool NP_visible;
+  final Function() showNS;
+  final Function() hideNS;
 
   @override
   Widget build(BuildContext context) {
@@ -13,19 +19,8 @@ class BottomMenu extends StatelessWidget {
       padding: EdgeInsets.all(6),
       color: Color(0xFF0057DA),
       child: Center(
-          child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          MenuItem('Paradas Próximas', 'assets/bus-stop.png',
-              () => print("EAE GALERAAAAAAAA!")),
-          VerticalDivider(),
-          MenuItem('Buscar Ônibus', 'assets/bus_Search2.png', () {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (context) => SearchBus()));
-          })
-        ],
-      )),
+        child: NP_visible ? NearStops(hideNS) : MainMenu(showNS),
+      ),
     );
   }
 }

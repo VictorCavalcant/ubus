@@ -1,16 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:ubus/components/BottomMenu.dart';
-import './../consts.dart';
 import 'dart:ui' as ui;
 import 'package:ubus/data/stops.dart';
+import 'package:ubus/scripts/nearPoints.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -23,9 +20,22 @@ class _MapPageState extends State<MapPage> {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
-  static const LatLng _pGooglePlex = LatLng(37.4223, -122.0848);
-  static const LatLng _pApplePark = LatLng(37.3346, -122.0090);
   LatLng? _currentP;
+  bool nearStopsVisible = false;
+  dynamic nearStops;
+
+  showNearStops() {
+    setState(() {
+      nearStopsVisible = true;
+      nearStops = getNearPoints(stops, _currentP!.longitude);
+    });
+  }
+
+  hideNearStops() {
+    setState(() {
+      nearStopsVisible = false;
+    });
+  }
 
   Map<PolylineId, Polyline> polylines = {};
 
@@ -34,11 +44,7 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     SystemChannels.textInput.invokeMethod('TextInput.hide');
     _customMarkerIcon();
-    getLocationUpdates().then((_) => {
-          getPolylinePoints().then((coordinates) => {
-                generatePolyLineFromPoints(coordinates),
-              })
-        });
+    getLocationUpdates();
   }
 
   BitmapDescriptor _stopMarkerIcon = BitmapDescriptor.defaultMarker;
@@ -61,8 +67,9 @@ class _MapPageState extends State<MapPage> {
           : Container(
               child: Column(children: [
                 Expanded(
-                  flex: 5,
+                  flex: nearStopsVisible ? 2 : 5,
                   child: GoogleMap(
+                      mapToolbarEnabled: false,
                       myLocationEnabled: true,
                       myLocationButtonEnabled: true,
                       onMapCreated: ((GoogleMapController controller) =>
@@ -73,17 +80,21 @@ class _MapPageState extends State<MapPage> {
                       markers: {
                         ...stops.map((stp) {
                           return Marker(
-                              markerId: MarkerId(stp['name'].toString()),
-                              position: stp.cast()['position'],
+                              markerId: MarkerId(stp.name),
+                              position: stp.coords,
                               icon: _stopMarkerIcon);
                         })
                       }),
                 ),
-                Expanded(child: BottomMenu())
+                Expanded(
+                    child: BottomMenu(
+                        nearStopsVisible, showNearStops, hideNearStops))
               ]),
             ),
     );
   }
+
+  // GoogleMap Services:
 
   Future<Uint8List> getBytesFromAssets(String path, int width) async {
     ByteData data = await rootBundle.load(path);
@@ -141,45 +152,13 @@ class _MapPageState extends State<MapPage> {
       accuracy: LocationAccuracy.high,
       distanceFilter: 100,
     );
-    StreamSubscription<Position> positionStream =
-        Geolocator.getPositionStream(locationSettings: locationSettings)
-            .listen((Position? position) {
+    Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position? position) {
       if (position != currentLocation) {
         setState(() {
           _cameraToPosition(LatLng(position!.latitude, position.longitude));
         });
       }
-    });
-  }
-
-  Future<List<LatLng>> getPolylinePoints() async {
-    List<LatLng> polylineCoordinates = [];
-    PolylinePoints polylinePoints = PolylinePoints();
-    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      GOOGLE_MAPS_API_KEY,
-      PointLatLng(_pGooglePlex.latitude, _pGooglePlex.longitude),
-      PointLatLng(_pApplePark.latitude, _pApplePark.longitude),
-      travelMode: TravelMode.driving,
-    );
-    if (result.points.isNotEmpty) {
-      result.points.forEach((PointLatLng point) {
-        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-      });
-    } else {
-      print(result.errorMessage);
-    }
-    return polylineCoordinates;
-  }
-
-  void generatePolyLineFromPoints(List<LatLng> polylineCoordinates) async {
-    PolylineId id = PolylineId("poly");
-    Polyline polyline = Polyline(
-        polylineId: id,
-        color: Colors.blueAccent,
-        points: polylineCoordinates,
-        width: 8);
-    setState(() {
-      polylines[id] = polyline;
     });
   }
 }
