@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
-
+import 'package:ubus/components/Metrics.dart';
 
 class CardStop extends StatelessWidget {
-  const CardStop(this.title, this.getStopCoords, this.lat, this.long);
+  const CardStop(this.title, this.getStopCoords, this.lat, this.long,
+      this.distance, this.time_distance, this.stopName);
 
   final String title;
   final double lat;
   final double long;
-  final Function(PointLatLng) getStopCoords;
+  final Function(PointLatLng, String) getStopCoords;
+  final String? distance;
+  final String? time_distance;
+   final String stopName;
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +39,16 @@ class CardStop extends StatelessWidget {
             ),
           ),
           IconButton(
-              onPressed: () => getStopCoords(PointLatLng(lat, long)),
-              icon: const Icon(
-                Icons.directions,
-                color: Colors.blue,
-                size: 30,
-              ))
+            onPressed: () => getStopCoords(PointLatLng(lat, long), title),
+            icon: const Icon(
+              Icons.directions,
+              color: Colors.blue,
+              size: 30,
+            ),
+          ),
+          distance != null && time_distance != null && title == stopName
+              ? Metrics(distance, time_distance)
+              : Container()
         ]),
       ),
     );

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -25,8 +26,9 @@ class _MapPageState extends State<MapPage> {
   bool nearStopsVisible = false;
   List nearStops = [];
   PointLatLng stopDestination = PointLatLng(0.0, 0.0);
-  int distanceValue = 0;
-  int durationValue = 0;
+  String stopName = '';
+  String? distance;
+  String? duration;
   int zoomValue = 17;
 
   Map<PolylineId, Polyline> polylines = {};
@@ -62,8 +64,9 @@ class _MapPageState extends State<MapPage> {
 
   BitmapDescriptor _stopMarkerIcon = BitmapDescriptor.defaultMarker;
 
-  getStopDestination(PointLatLng value) {
+  getStopDestination(PointLatLng value, String name) {
     setState(() {
+      stopName = name;
       stopDestination = value;
       getLocationUpdates().then(
         (_) => {
@@ -76,7 +79,8 @@ class _MapPageState extends State<MapPage> {
   }
 
   testeFunction() {
-    print(dotenv.env['GOOGLE_MAPS_KEY']);
+    print('Distância: $distance');
+    print('Duração: $duration');
   }
 
   @override
@@ -132,7 +136,7 @@ class _MapPageState extends State<MapPage> {
                   )),
               Expanded(
                   child: BottomMenu(nearStopsVisible, showNearStops, nearStops,
-                      getStopDestination))
+                      getStopDestination, distance, duration, stopName))
             ]),
     );
   }
@@ -229,6 +233,27 @@ class _MapPageState extends State<MapPage> {
       stopDestination,
       travelMode: TravelMode.walking,
     );
+
+    print("Result Distance: ${result.distance}");
+    print("Result DistanceValue: ${result.distanceValue}");
+    print("Result DistanceText ${result.distanceText}");
+    print("Result Duration: ${result.duration}");
+    print("Result DurationValue: ${result.durationValue}");
+    print("Result DurationText ${result.durationText}");
+
+    setState(() {
+      duration = result.duration;
+
+      String removeKm = result.distance!.replaceAll('km', '');
+      double doubleValue = double.parse(removeKm);
+      int intValue = (doubleValue * 1000).toInt();
+      if (doubleValue >= 1) {
+        distance = result.distance;
+      } else {
+        distance = '$intValue m';
+      }
+    });
+
     if (result.points.isNotEmpty) {
       result.points.forEach((PointLatLng point) {
         polylineCoordinates.add(LatLng(point.latitude, point.longitude));
@@ -236,6 +261,7 @@ class _MapPageState extends State<MapPage> {
     } else {
       print(result.errorMessage);
     }
+
     return polylineCoordinates;
   }
 
