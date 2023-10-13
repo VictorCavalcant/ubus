@@ -87,8 +87,14 @@ class _MapPageState extends State<MapPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         actions: [
-          IconButton(onPressed: testeFunction, icon: Icon(Icons.science))
+          IconButton(
+              onPressed: testeFunction,
+              icon: Icon(
+                Icons.science,
+                color: Colors.white,
+              ))
         ],
         leading: nearStopsVisible
             ? IconButton(

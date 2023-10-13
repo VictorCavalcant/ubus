@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:ubus/misc/SplashScreen.dart';
+import 'package:ubus/pages/HomePage.dart';
 import 'package:ubus/pages/MapPage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
           colorScheme:
               ThemeData().colorScheme.copyWith(primary: Color(0xFF0057DA)),
           useMaterial3: true),
-      home: MapPage(),
+      home: SplashScreen(),
     );
   }
 }

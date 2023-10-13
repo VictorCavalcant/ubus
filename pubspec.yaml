@@ -42,10 +42,29 @@ dependencies:
   flutter_config: ^2.0.2
   flutter_animate: ^4.2.0+1
   flutter_dotenv: ^5.1.0
+  flutter_native_splash: ^2.3.3
+  animated_splash_screen: ^1.3.0
+  page_transition: ^2.1.0
+
+flutter_native_splash:
+  color: "#0469ff"
+  image: assets/icon_2.png
+  android: true
+  fullscreen: true
+  android_12:
+    image: assets/icon_2.png
+    icon_background_color: "#0469ff"
+  android_gravity: fill
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  image_path: "assets/icon_1.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
