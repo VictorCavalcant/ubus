@@ -9,6 +9,7 @@ import 'package:ubus/consts.dart';
 import 'dart:ui' as ui;
 import 'package:ubus/data/stops.dart';
 import 'package:ubus/scripts/nearPoints.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -76,9 +77,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   testeFunction() {
-    final valorTeste = PointLatLng(0.0, 0.0);
-    bool teste = stopDestination.latitude != valorTeste.latitude;
-    print(teste);
+    print(dotenv.env['GOOGLE_MAPS_KEY']);
   }
 
   @override
@@ -226,7 +225,7 @@ class _MapPageState extends State<MapPage> {
     List<LatLng> polylineCoordinates = [];
     PolylinePoints polylinePoints = PolylinePoints();
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
-      GOOGLE_MAPS_API_KEY,
+      dotenv.env['GOOGLE_MAPS_KEY'].toString(),
       PointLatLng(_currentP!.latitude, _currentP!.longitude),
       stopDestination,
       travelMode: TravelMode.walking,
