@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:ubus/components/BottomMenu.dart';
+import 'package:ubus/consts.dart';
 import 'dart:ui' as ui;
 import 'package:ubus/data/stops.dart';
 import 'package:ubus/scripts/nearPoints.dart';
@@ -22,7 +23,13 @@ class _MapPageState extends State<MapPage> {
 
   LatLng? _currentP;
   bool nearStopsVisible = false;
-  dynamic nearStops;
+  List nearStops = [];
+  PointLatLng stopDestination = PointLatLng(0.0, 0.0);
+  int distanceValue = 0;
+  int durationValue = 0;
+  int zoomValue = 17;
+
+  Map<PolylineId, Polyline> polylines = {};
 
   showNearStops() {
     setState(() {
@@ -34,67 +41,107 @@ class _MapPageState extends State<MapPage> {
   hideNearStops() {
     setState(() {
       nearStopsVisible = false;
+      stopDestination = PointLatLng(0.0, 0.0);
     });
   }
-
-  Map<PolylineId, Polyline> polylines = {};
 
   @override
   void initState() {
     super.initState();
+    zoomValue;
     SystemChannels.textInput.invokeMethod('TextInput.hide');
     _customMarkerIcon();
-    getLocationUpdates();
+    getLocationUpdates().then(
+      (_) => {
+        getPolylinePoints().then((coordinates) => {
+              generatePolyLineFromPoints(coordinates),
+            }),
+      },
+    );
   }
 
   BitmapDescriptor _stopMarkerIcon = BitmapDescriptor.defaultMarker;
+
+  getStopDestination(PointLatLng value) {
+    setState(() {
+      stopDestination = value;
+      getLocationUpdates().then(
+        (_) => {
+          getPolylinePoints().then((coordinates) => {
+                generatePolyLineFromPoints(coordinates),
+              }),
+        },
+      );
+    });
+  }
+
+  testeFunction() {
+    final valorTeste = PointLatLng(0.0, 0.0);
+    bool teste = stopDestination.latitude != valorTeste.latitude;
+    print(teste);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          IconButton(onPressed: testeFunction, icon: Icon(Icons.science))
+        ],
+        leading: nearStopsVisible
+            ? IconButton(
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                ),
+                onPressed: hideNearStops,
+              )
+            : null,
         toolbarHeight: 50,
-        title: Text('ubus',
+        title: const Text('ubus',
             style: TextStyle(
                 fontFamily: 'Flix', color: Colors.white, fontSize: 40)),
         centerTitle: true,
-        backgroundColor: Color(0xFF0057DA),
+        backgroundColor: const Color(0xFF0057DA),
       ),
       body: _currentP == null
-          ? Center(
+          ? const Center(
               child: Text("Loading..."),
             )
-          : Container(
-              child: Column(children: [
-                Expanded(
+          : Column(children: [
+              Expanded(
                   flex: nearStopsVisible ? 2 : 5,
                   child: GoogleMap(
-                      mapToolbarEnabled: false,
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: true,
-                      onMapCreated: ((GoogleMapController controller) =>
-                          _mapController.complete(controller)),
-                      initialCameraPosition:
-                          CameraPosition(target: _currentP!, zoom: 17),
-                      zoomControlsEnabled: false,
-                      markers: {
-                        ...stops.map((stp) {
-                          return Marker(
-                              markerId: MarkerId(stp.name),
-                              position: stp.coords,
-                              icon: _stopMarkerIcon);
-                        })
+                    mapToolbarEnabled: false,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: true,
+                    onMapCreated: ((GoogleMapController controller) =>
+                        _mapController.complete(controller)),
+                    initialCameraPosition:
+                        CameraPosition(target: _currentP!, zoom: 17),
+                    zoomControlsEnabled: false,
+                    markers: {
+                      ...stops.map((stp) {
+                        return Marker(
+                            markerId: MarkerId(stp.name),
+                            position: stp.coords,
+                            icon: _stopMarkerIcon);
                       }),
-                ),
-                Expanded(
-                    child: BottomMenu(
-                        nearStopsVisible, showNearStops, hideNearStops))
-              ]),
-            ),
+                    },
+                    polylines: stopDestination.latitude != 0.0
+                        ? Set<Polyline>.of(polylines.values)
+                        : {},
+                  )),
+              Expanded(
+                  child: BottomMenu(nearStopsVisible, showNearStops, nearStops,
+                      getStopDestination))
+            ]),
     );
   }
 
-  // GoogleMap Services:
+  // || GoogleMap Services||
+
+  // CustomIconMarker Section
 
   Future<Uint8List> getBytesFromAssets(String path, int width) async {
     ByteData data = await rootBundle.load(path);
@@ -113,6 +160,8 @@ class _MapPageState extends State<MapPage> {
     setState(() {});
   }
 
+  // Camera section
+
   Future<void> _cameraToPosition(LatLng pos) async {
     final GoogleMapController controller = await _mapController.future;
     CameraPosition _newCameraPosition = CameraPosition(target: pos, zoom: 13);
@@ -120,6 +169,8 @@ class _MapPageState extends State<MapPage> {
       CameraUpdate.newCameraPosition(_newCameraPosition),
     );
   }
+
+  // Location Section
 
   Future<void> getLocationUpdates() async {
     bool serviceEnabled;
@@ -146,9 +197,16 @@ class _MapPageState extends State<MapPage> {
     var currentLocation = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
 
-    _currentP = LatLng(currentLocation.latitude, currentLocation.longitude);
+    getLoc() {
+      setState(() {
+        _currentP = LatLng(currentLocation.latitude, currentLocation.longitude);
+        print(_currentP);
+      });
+    }
 
-    final LocationSettings locationSettings = LocationSettings(
+    getLoc();
+
+    const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 100,
     );
@@ -159,6 +217,39 @@ class _MapPageState extends State<MapPage> {
           _cameraToPosition(LatLng(position!.latitude, position.longitude));
         });
       }
+    });
+  }
+
+  // Polyline Section
+
+  Future<List<LatLng>> getPolylinePoints() async {
+    List<LatLng> polylineCoordinates = [];
+    PolylinePoints polylinePoints = PolylinePoints();
+    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+      GOOGLE_MAPS_API_KEY,
+      PointLatLng(_currentP!.latitude, _currentP!.longitude),
+      stopDestination,
+      travelMode: TravelMode.walking,
+    );
+    if (result.points.isNotEmpty) {
+      result.points.forEach((PointLatLng point) {
+        polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+      });
+    } else {
+      print(result.errorMessage);
+    }
+    return polylineCoordinates;
+  }
+
+  void generatePolyLineFromPoints(List<LatLng> polylineCoordinates) async {
+    PolylineId id = PolylineId("poly");
+    Polyline polyline = Polyline(
+        polylineId: id,
+        color: Colors.blue,
+        points: polylineCoordinates,
+        width: 8);
+    setState(() {
+      polylines[id] = polyline;
     });
   }
 }

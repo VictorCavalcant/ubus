@@ -7,7 +7,6 @@ class MainMenu extends StatelessWidget {
 
   final Function() showNS;
 
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -16,11 +15,20 @@ class MainMenu extends StatelessWidget {
       children: [
         MenuItem('Paradas Próximas', 'assets/bus-stop.png', showNS),
         VerticalDivider(),
-        MenuItem('Buscar Ônibus', 'assets/bus_Search2.png', () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => SearchBus()));
-        })
+        MenuItem('Buscar Ônibus', 'assets/bus_Search2.png', () {})
       ],
     );
   }
 }
+
+
+/*
+
+Go to SearchPage
+
+() {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => SearchBus()));
+        }
+
+*/

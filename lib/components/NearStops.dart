@@ -1,26 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:ubus/components/CardStop.dart';
 
 class NearStops extends StatelessWidget {
-  const NearStops(this.hideNS);
+  const NearStops(this.nearStops, this.getStopCoords);
 
-  final Function() hideNS;
+  final List nearStops;
+  final Function(PointLatLng) getStopCoords;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-        child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text("OPA EAE"),
-        TextButton(
-          onPressed: hideNS,
-          child: Text(
-            'VOLTAR',
-            style: TextStyle(color: Colors.white),
-          ),
-        )
-      ],
-    ));
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [...nearStops.map((ns) => CardStop(ns.name, getStopCoords, ns.coords.latitude, ns.coords.longitude))],
+      ),
+    );
   }
 }

@@ -22,6 +22,7 @@ class MenuItem extends StatelessWidget {
             width: 70,
             fit: BoxFit.cover,
           ),
+          SizedBox(height: 7),
           Text(
             title,
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
