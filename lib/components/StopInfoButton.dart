@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:provider/provider.dart';
 import 'package:ubus/misc/consts.dart';
+import 'package:ubus/providers/StopProvider.dart';
 
 class StopInfoButton extends StatelessWidget {
-  StopInfoButton({this.title, this.function, this.icon, this.image});
+  StopInfoButton({this.title, this.icon, this.image, this.function});
 
   String? title;
   Function()? function;
@@ -20,7 +23,9 @@ class StopInfoButton extends StatelessWidget {
             child: Material(
               color: primaryColor, // Button color
               child: InkWell(
-                onTap: function != null ? function : () {},
+                onTap: () {
+                  function!();
+                },
                 child: SizedBox(
                     width: 56,
                     height: 56,

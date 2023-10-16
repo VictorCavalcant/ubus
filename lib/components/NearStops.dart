@@ -6,7 +6,6 @@ import 'package:ubus/providers/StopProvider.dart';
 class NearStops extends StatelessWidget {
   const NearStops();
 
-
   @override
   Widget build(BuildContext context) {
     final stop_provider = Provider.of<StopProvider>(context);
@@ -15,8 +14,8 @@ class NearStops extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ...stop_provider.nearsStops!.map((ns) => CardStop(ns.name,
-              ns.coords.latitude, ns.coords.longitude))
+          ...stop_provider.nearsStops!.map((ns) =>
+              CardStop(ns.name, ns.coords.latitude, ns.coords.longitude))
         ],
       ),
     );

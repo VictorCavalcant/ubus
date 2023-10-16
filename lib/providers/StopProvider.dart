@@ -10,6 +10,7 @@ class StopProvider extends ChangeNotifier {
   String? duration2;
   Future<void>? updatePolyline;
   bool isNearStopsVisible;
+  bool isStopInfoVisible;
   List? nearsStops;
   double CurrentLoc_lat;
   bool isGettingTD = false;
@@ -19,10 +20,11 @@ class StopProvider extends ChangeNotifier {
       this.stopCoords = const PointLatLng(0.0, 0.0),
       this.updatePolyline,
       this.isNearStopsVisible = false,
+      this.isStopInfoVisible = false,
       this.nearsStops,
       this.CurrentLoc_lat = 0.0});
 
-  void getStopDestination(PointLatLng value, String name) async {
+  getStopDestination(PointLatLng value, String name) async {
     stopName = name;
     stopCoords = value;
     await updatePolyline;
@@ -42,6 +44,14 @@ class StopProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  hideStopInfo() {
+    stopCoords = PointLatLng(0.0, 0.0);
+    distance2 = null;
+    duration2 = null;
+    isStopInfoVisible = false;
+    isGettingTD = false;
+  }
+
   dynamic showNearStops() {
     isNearStopsVisible = true;
     isGettingTD = true;
@@ -50,6 +60,11 @@ class StopProvider extends ChangeNotifier {
 
   void getCurrentLat(value) {
     CurrentLoc_lat = value;
+  }
+
+  setStopInfoTrue() {
+    isStopInfoVisible = true;
+    isGettingTD = true;
   }
 
   getDistance_n_Duration(distance_value, duration_value) {

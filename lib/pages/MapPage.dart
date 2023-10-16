@@ -49,11 +49,7 @@ class _MapPageState extends State<MapPage> {
   setUpdatePolyline() =>
       {context.watch<StopProvider>().getUpdatePolyline(updatePolylines)};
 
-  testeFunction() {
-    print('Distância: ${context.read<StopProvider>().distance2}');
-    print('Duração: ${context.read<StopProvider>().duration2}');
-    print('StopCoords: ${context.read<StopProvider>().stopCoords}');
-  }
+  testeFunction() {}
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +74,15 @@ class _MapPageState extends State<MapPage> {
                 ),
                 onPressed: stop_provider.hideNearStops,
               )
-            : null,
+            : stop_provider.isStopInfoVisible
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                    ),
+                    onPressed: stop_provider.hideStopInfo,
+                  )
+                : null,
         toolbarHeight: 45,
         title: const Text('ubus',
             style: TextStyle(
@@ -113,7 +117,10 @@ class _MapPageState extends State<MapPage> {
                               showModalBottomSheet(
                                   shape: LinearBorder(side: BorderSide.none),
                                   context: context,
-                                  builder: (context) => StopInfo());
+                                  builder: (context) => StopInfo(
+                                      stp.name,
+                                      PointLatLng(stp.coords.latitude,
+                                          stp.coords.longitude)));
                             },
                             position: stp.coords,
                             icon: _stopMarkerIcon);

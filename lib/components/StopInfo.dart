@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:provider/provider.dart';
 import 'package:ubus/components/StopInfoButton.dart';
+import 'package:ubus/providers/StopProvider.dart';
 
 class StopInfo extends StatelessWidget {
-  const StopInfo({super.key});
+  StopInfo(this.stopName, this.stopCoords);
+
+  String stopName = '';
+  PointLatLng stopCoords;
 
   @override
   Widget build(BuildContext context) {
+    final stop_provider = Provider.of<StopProvider>(context);
     return Container(
       width: MediaQuery.of(context).size.width,
       child: Column(
@@ -45,9 +52,13 @@ class StopInfo extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 StopInfoButton(
-                  title: 'Traçar Rota',
-                  icon: Icons.directions,
-                ),
+                    title: 'Traçar Rota',
+                    icon: Icons.directions,
+                    function: () {
+                      stop_provider.getStopDestination(stopCoords, stopName);
+                      stop_provider.setStopInfoTrue();
+                      Navigator.pop(context);
+                    }),
                 StopInfoButton(
                   title: 'Lista de Ônibus',
                   image: 'assets/bus_search_icon.png',
