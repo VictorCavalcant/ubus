@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ubus/misc/SplashScreen.dart';
-import 'package:ubus/pages/HomePage.dart';
-import 'package:ubus/pages/MapPage.dart';
+import 'package:ubus/misc/consts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:ubus/providers/StopProvider.dart';
 
 Future main() async {
   await dotenv.load(fileName: ".env");
@@ -13,15 +14,20 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Ubus',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData().copyWith(
-          primaryColor: Color(0xFF0057DA),
-          colorScheme:
-              ThemeData().colorScheme.copyWith(primary: Color(0xFF0057DA)),
-          useMaterial3: true),
-      home: SplashScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => StopProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Ubus',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData().copyWith(
+            primaryColor: primaryColor,
+            colorScheme:
+                ThemeData().colorScheme.copyWith(primary: primaryColor),
+            useMaterial3: true),
+        home: SplashScreen(),
+      ),
     );
   }
 }

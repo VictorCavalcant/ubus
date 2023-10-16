@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:provider/provider.dart';
 import 'package:ubus/components/Metrics.dart';
+import 'package:ubus/providers/StopProvider.dart';
 
 class CardStop extends StatelessWidget {
-  const CardStop(this.title, this.getStopCoords, this.lat, this.long,
-      this.distance, this.time_distance, this.stopName);
+  CardStop(this.title, this.lat, this.long);
 
   final String title;
   final double lat;
   final double long;
-  final Function(PointLatLng, String) getStopCoords;
-  final String? distance;
-  final String? time_distance;
-   final String stopName;
 
   @override
   Widget build(BuildContext context) {
+    final stop_provider = Provider.of<StopProvider>(context);
     return Card(
       child: Container(
         width: double.infinity,
@@ -39,15 +37,21 @@ class CardStop extends StatelessWidget {
             ),
           ),
           IconButton(
-            onPressed: () => getStopCoords(PointLatLng(lat, long), title),
+            onPressed: () {
+              context
+                  .read<StopProvider>()
+                  .getStopDestination(PointLatLng(lat, long), title);
+            },
             icon: const Icon(
               Icons.directions,
               color: Colors.blue,
               size: 30,
             ),
           ),
-          distance != null && time_distance != null && title == stopName
-              ? Metrics(distance, time_distance)
+          stop_provider.distance2 != null &&
+                  stop_provider.duration2 != null &&
+                  title == context.watch<StopProvider>().stopName
+              ? Metrics(stop_provider.distance2, stop_provider.duration2)
               : Container()
         ]),
       ),
