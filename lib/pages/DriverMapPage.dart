@@ -13,20 +13,21 @@ import 'package:ubus/data/stops.dart';
 import 'package:ubus/providers/StopProvider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+class DriverMapPage extends StatefulWidget {
+  const DriverMapPage({super.key});
 
   @override
-  State<MapPage> createState() => _MapPageState();
+  State<DriverMapPage> createState() => _DriverMapPageState();
 }
 
-class _MapPageState extends State<MapPage> {
+class _DriverMapPageState extends State<DriverMapPage> {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
   LatLng? _currentP;
   int zoomValue = 17;
   Map<PolylineId, Polyline> polylines = {};
+  OverlayEntry? entry;
 
   @override
   void initState() {
@@ -36,7 +37,7 @@ class _MapPageState extends State<MapPage> {
     getLocationUpdates();
   }
 
-  BitmapDescriptor _stopMarkerIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor _BusLocMarker = BitmapDescriptor.defaultMarker;
 
   Future<void> updatePolylines() {
     return getLocationUpdates().then(
@@ -46,43 +47,34 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
-  setUpdatePolyline() =>
-      {context.watch<StopProvider>().getUpdatePolyline(updatePolylines)};
+  Future<void> GetUpdatedLocation() {
+    return getLocationUpdates();
+  }
 
-  testeFunction() {}
+  GetClocation() {
+    _cameraToPosition(_currentP!);
+  }
 
   @override
   Widget build(BuildContext context) {
-    setUpdatePolyline();
-    final stop_provider = Provider.of<StopProvider>(context);
+    GetUpdatedLocation();
+    _customMarkerIcon();
     return Scaffold(
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(top: 80),
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: FloatingActionButton(
+              child: Icon(Icons.gps_fixed),
+              onPressed: () {
+                GetClocation();
+              }),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-              onPressed: testeFunction,
-              icon: Icon(
-                Icons.science,
-                color: Colors.white,
-              ))
-        ],
-        leading: stop_provider.isNearStopsVisible
-            ? IconButton(
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                ),
-                onPressed: stop_provider.hideNearStops,
-              )
-            : stop_provider.isStopInfoVisible
-                ? IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                    ),
-                    onPressed: stop_provider.hideStopInfo,
-                  )
-                : null,
         toolbarHeight: 45,
         title: const Text('ubus',
             style: TextStyle(
@@ -99,38 +91,21 @@ class _MapPageState extends State<MapPage> {
             )
           : Column(children: [
               Expanded(
-                  flex: stop_provider.isNearStopsVisible ? 2 : 5,
-                  child: GoogleMap(
-                    mapToolbarEnabled: false,
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
-                    onMapCreated: ((GoogleMapController controller) =>
-                        _mapController.complete(controller)),
-                    initialCameraPosition:
-                        CameraPosition(target: _currentP!, zoom: 15),
-                    zoomControlsEnabled: false,
-                    markers: {
-                      ...stops.map((stp) {
-                        return Marker(
-                            markerId: MarkerId(stp.name),
-                            onTap: () {
-                              showModalBottomSheet(
-                                  shape: LinearBorder(side: BorderSide.none),
-                                  context: context,
-                                  builder: (context) => StopInfo(
-                                      stp.name,
-                                      PointLatLng(stp.coords.latitude,
-                                          stp.coords.longitude)));
-                            },
-                            position: stp.coords,
-                            icon: _stopMarkerIcon);
-                      }),
-                    },
-                    polylines: stop_provider.stopCoords.latitude != 0.0
-                        ? Set<Polyline>.of(polylines.values)
-                        : {},
-                  )),
-              Expanded(child: BottomMenu())
+                child: GoogleMap(
+                  mapToolbarEnabled: false,
+                  onMapCreated: ((GoogleMapController controller) =>
+                      _mapController.complete(controller)),
+                  initialCameraPosition:
+                      CameraPosition(target: _currentP!, zoom: 15),
+                  zoomControlsEnabled: false,
+                  markers: {
+                    Marker(
+                        markerId: MarkerId(''),
+                        position: _currentP!,
+                        icon: _BusLocMarker)
+                  },
+                ),
+              ),
             ]),
     );
   }
@@ -151,8 +126,8 @@ class _MapPageState extends State<MapPage> {
 
   _customMarkerIcon() async {
     final Uint8List customIcon =
-        await getBytesFromAssets("assets/Bus_marker.png", 120);
-    _stopMarkerIcon = BitmapDescriptor.fromBytes(customIcon);
+        await getBytesFromAssets("assets/bus_LocMark.png", 120);
+    _BusLocMarker = BitmapDescriptor.fromBytes(customIcon);
     setState(() {});
   }
 
