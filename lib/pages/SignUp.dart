@@ -20,6 +20,7 @@ class SignUpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: primaryColor,
       body: SingleChildScrollView(
         child: Padding(

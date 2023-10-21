@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -218,8 +217,8 @@ class _UserMapPageState extends State<UserMapPage> {
       } else {
         print(result.errorMessage);
       }
+      generatePolyLineFromPoints(polylineCoordinates);
     }
-    generatePolyLineFromPoints(polylineCoordinates);
   }
 
   void generatePolyLineFromPoints(List<LatLng> polylineCoordinates) async {
