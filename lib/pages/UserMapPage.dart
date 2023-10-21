@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -28,43 +29,37 @@ class _UserMapPageState extends State<UserMapPage> {
   int zoomValue = 17;
   Map<PolylineId, Polyline> polylines = {};
 
+  testeFunction() {
+    print(
+        "Valor de stopCoords.latitude -> ${context.read<StopProvider>().stopCoords.latitude}}");
+  }
+
   @override
   void initState() {
     super.initState();
+    getCurrentPosition();
+    UpdateLocation();
     SystemChannels.textInput.invokeMethod('TextInput.hide');
     _customMarkerIcon();
-    getLocationUpdates();
   }
 
   BitmapDescriptor _stopMarkerIcon = BitmapDescriptor.defaultMarker;
 
-  Future<void> updatePolylines() {
-    return getLocationUpdates().then(
-      (_) => getPolylinePoints().then(
-        (coordinates) => generatePolyLineFromPoints(coordinates),
-      ),
-    );
-  }
-
-  setUpdatePolyline() =>
-      {context.watch<StopProvider>().getUpdatePolyline(updatePolylines)};
-
-  testeFunction() {}
-
   @override
   Widget build(BuildContext context) {
-    setUpdatePolyline();
+    getPolylinePoints();
     final stop_provider = Provider.of<StopProvider>(context);
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-              onPressed: testeFunction,
-              icon: Icon(
-                Icons.science,
-                color: Colors.white,
-              ))
+            onPressed: testeFunction,
+            icon: Icon(
+              Icons.science,
+              color: Colors.white,
+            ),
+          )
         ],
         leading: stop_provider.isNearStopsVisible
             ? IconButton(
@@ -97,8 +92,9 @@ class _UserMapPageState extends State<UserMapPage> {
                 size: 50.0,
               ),
             )
-          : Column(children: [
-              Expanded(
+          : Column(
+              children: [
+                Expanded(
                   flex: stop_provider.isNearStopsVisible ? 2 : 5,
                   child: GoogleMap(
                     mapToolbarEnabled: false,
@@ -110,28 +106,32 @@ class _UserMapPageState extends State<UserMapPage> {
                         CameraPosition(target: _currentP!, zoom: 15),
                     zoomControlsEnabled: false,
                     markers: {
-                      ...stops.map((stp) {
-                        return Marker(
-                            markerId: MarkerId(stp.name),
-                            onTap: () {
-                              showModalBottomSheet(
-                                  shape: LinearBorder(side: BorderSide.none),
-                                  context: context,
-                                  builder: (context) => StopInfo(
-                                      stp.name,
-                                      PointLatLng(stp.coords.latitude,
-                                          stp.coords.longitude)));
-                            },
-                            position: stp.coords,
-                            icon: _stopMarkerIcon);
-                      }),
+                      ...stops.map(
+                        (stp) {
+                          return Marker(
+                              markerId: MarkerId(stp.name),
+                              onTap: () {
+                                showModalBottomSheet(
+                                    shape: LinearBorder(side: BorderSide.none),
+                                    context: context,
+                                    builder: (context) => StopInfo(
+                                        stp.name,
+                                        PointLatLng(stp.coords.latitude,
+                                            stp.coords.longitude)));
+                              },
+                              position: stp.coords,
+                              icon: _stopMarkerIcon);
+                        },
+                      ),
                     },
                     polylines: stop_provider.stopCoords.latitude != 0.0
                         ? Set<Polyline>.of(polylines.values)
                         : {},
-                  )),
-              Expanded(child: BottomMenu())
-            ]),
+                  ),
+                ),
+                Expanded(child: BottomMenu())
+              ],
+            ),
     );
   }
 
@@ -158,67 +158,45 @@ class _UserMapPageState extends State<UserMapPage> {
 
   // Camera section
 
-  Future<void> _cameraToPosition(LatLng pos) async {
-    print("Valor de pos: $pos");
-    final GoogleMapController controller = await _mapController.future;
-    CameraPosition _newCameraPosition = CameraPosition(target: pos, zoom: 17);
-    await controller.animateCamera(
-      CameraUpdate.newCameraPosition(_newCameraPosition),
-    );
+  Future<void> _cameraToPosition() async {
+    if (_currentP != null) {
+      _customMarkerIcon();
+      final GoogleMapController controller = await _mapController.future;
+      controller.moveCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: _currentP!, zoom: 15),
+        ),
+      );
+    }
   }
 
   // Location Section
 
-  Future<void> getLocationUpdates() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return Future.error('Location permission are denied');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions permanently denied, we cannot request permissions');
-    }
-
-    var currentLocation = await Geolocator.getCurrentPosition(
+  void getCurrentPosition() async {
+    Position? _currentL = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
 
-    getLoc() {
-      setState(() {
-        _currentP = LatLng(currentLocation.latitude, currentLocation.longitude);
-      });
-    }
-
-    getLoc();
-
-    const LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 100,
-    );
-    Geolocator.getPositionStream(locationSettings: locationSettings)
-        .listen((Position? position) {
-      if (position != currentLocation) {
-        setState(() {
-          _cameraToPosition(LatLng(position!.latitude, position.longitude));
-        });
-      }
+    setState(() {
+      _currentP = LatLng(_currentL.latitude, _currentL.longitude);
     });
+  }
+
+  UpdateLocation() {
+    Geolocator.getPositionStream(
+        locationSettings: LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10,
+    )).listen(
+      (Position position) {
+        _currentP = LatLng(position.latitude, position.longitude);
+        _cameraToPosition();
+      },
+    );
   }
 
   // Polyline Section
 
-  Future<List<LatLng>> getPolylinePoints() async {
+  getPolylinePoints() async {
     List<LatLng> polylineCoordinates = [];
     PolylinePoints polylinePoints = PolylinePoints();
     if (context.read<StopProvider>().stopCoords.latitude != 0.0) {
@@ -228,19 +206,6 @@ class _UserMapPageState extends State<UserMapPage> {
         context.read<StopProvider>().stopCoords,
         travelMode: TravelMode.walking,
       );
-
-      // setState(() {
-      //   duration = result.duration;
-
-      //   String removeKm = result.distance!.replaceAll('km', '');
-      //   double doubleValue = double.parse(removeKm);
-      //   int intValue = (doubleValue * 1000).toInt();
-      //   if (doubleValue >= 1) {
-      //     distance = result.distance;
-      //   } else {
-      //     distance = '$intValue m';
-      //   }
-      // });
 
       context
           .read<StopProvider>()
@@ -254,7 +219,7 @@ class _UserMapPageState extends State<UserMapPage> {
         print(result.errorMessage);
       }
     }
-    return polylineCoordinates;
+    generatePolyLineFromPoints(polylineCoordinates);
   }
 
   void generatePolyLineFromPoints(List<LatLng> polylineCoordinates) async {

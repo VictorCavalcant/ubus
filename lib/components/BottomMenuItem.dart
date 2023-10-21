@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:ubus/providers/StopProvider.dart';
 
 class MenuItem extends StatelessWidget {
   const MenuItem(this.title, this.image, this.function);

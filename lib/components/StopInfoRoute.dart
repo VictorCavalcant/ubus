@@ -36,8 +36,8 @@ class StopInfoRoute extends StatelessWidget {
           const SizedBox(
             width: 10,
           ),
-          stop_provider.distance2 != null && stop_provider.duration2 != null
-              ? Metrics(stop_provider.distance2, stop_provider.duration2)
+          stop_provider.distance != null && stop_provider.duration != null
+              ? Metrics(stop_provider.distance, stop_provider.duration)
               : Container()
         ]),
       ),

@@ -48,10 +48,10 @@ class CardStop extends StatelessWidget {
               size: 30,
             ),
           ),
-          stop_provider.distance2 != null &&
-                  stop_provider.duration2 != null &&
+          stop_provider.distance != null &&
+                  stop_provider.duration != null &&
                   title == context.watch<StopProvider>().stopName
-              ? Metrics(stop_provider.distance2, stop_provider.duration2)
+              ? Metrics(stop_provider.distance, stop_provider.duration)
               : Container()
         ]),
       ),
