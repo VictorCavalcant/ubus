@@ -71,6 +71,10 @@ class _SignInPageState extends State<SignInPage> {
                 ),
                 TextFormField(
                   controller: _passwordControllerSgIn,
+                  onFieldSubmitted: (value) {
+                    buttonIsClicked_SgIn(context);
+                    SystemChannels.textInput.invokeMethod('TextInput.hide');
+                  },
                   focusNode: passwordFocus,
                   decoration: getInputDecoration('Senha'),
                   validator: (String? value) {
