@@ -24,6 +24,9 @@ class _SignInPageState extends State<SignInPage> {
 
   TextEditingController _passwordControllerSgIn = TextEditingController();
 
+  FocusNode emailFocus = FocusNode();
+  FocusNode passwordFocus = FocusNode();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,6 +48,9 @@ class _SignInPageState extends State<SignInPage> {
                   width: 300,
                 ),
                 TextFormField(
+                  focusNode: emailFocus,
+                  onFieldSubmitted: (value) =>
+                      FocusScope.of(context).requestFocus(passwordFocus),
                   controller: _emailControllerSgIn,
                   decoration: getInputDecoration('E-mail'),
                   validator: (String? value) {
@@ -65,6 +71,7 @@ class _SignInPageState extends State<SignInPage> {
                 ),
                 TextFormField(
                   controller: _passwordControllerSgIn,
+                  focusNode: passwordFocus,
                   decoration: getInputDecoration('Senha'),
                   validator: (String? value) {
                     if (value == null) {
