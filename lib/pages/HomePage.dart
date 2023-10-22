@@ -32,7 +32,7 @@ class HomePage extends StatelessWidget {
                         MaterialPageRoute(builder: (context) => UserMapPage()));
                   }),
                   HomePageButton('Motorista', 'assets/driver.png', () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (context) => ScreenRouter()));

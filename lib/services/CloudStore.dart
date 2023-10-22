@@ -34,4 +34,10 @@ class CloudStore {
 
     return driversStream;
   }
+
+  Stream<QuerySnapshot> getActiveBuses() {
+    final activeBusesStream =
+        drivers.where("active", isEqualTo: true).snapshots();
+    return activeBusesStream;
+  }
 }

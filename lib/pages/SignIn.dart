@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ubus/components/DecorationInput.dart';
 import 'package:ubus/components/MySnackBar.dart';
 import 'package:ubus/misc/consts.dart';
@@ -28,11 +29,14 @@ class _SignInPageState extends State<SignInPage> {
     return Scaffold(
       backgroundColor: primaryColor,
       body: SingleChildScrollView(
+        padding: EdgeInsets.only(top: 20),
+        reverse: true,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
             key: _formKey_SgIn,
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -79,6 +83,7 @@ class _SignInPageState extends State<SignInPage> {
                 ElevatedButton(
                     onPressed: () {
                       buttonIsClicked_SgIn(context);
+                      SystemChannels.textInput.invokeMethod('TextInput.hide');
                     },
                     child: Text('Entrar')),
                 Divider(

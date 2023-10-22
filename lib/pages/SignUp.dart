@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ubus/components/DecorationInput.dart';
 import 'package:ubus/components/MySnackBar.dart';
 import 'package:ubus/misc/consts.dart';
@@ -23,6 +24,7 @@ class SignUpPage extends StatelessWidget {
       resizeToAvoidBottomInset: true,
       backgroundColor: primaryColor,
       body: SingleChildScrollView(
+        reverse: true,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -105,6 +107,7 @@ class SignUpPage extends StatelessWidget {
                 ElevatedButton(
                     onPressed: () {
                       buttonIsClicked_SgUp(context);
+                      SystemChannels.textInput.invokeMethod('TextInput.hide');
                     },
                     child: Text('Enviar Cadastro')),
                 Divider(),
