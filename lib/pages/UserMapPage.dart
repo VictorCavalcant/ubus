@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
@@ -12,6 +13,7 @@ import 'dart:ui' as ui;
 import 'package:ubus/data/stops.dart';
 import 'package:ubus/providers/StopProvider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:ubus/services/CloudStore.dart';
 
 class UserMapPage extends StatefulWidget {
   const UserMapPage({super.key});
@@ -27,6 +29,8 @@ class _UserMapPageState extends State<UserMapPage> {
   LatLng? _currentP;
   int zoomValue = 17;
   Map<PolylineId, Polyline> polylines = {};
+  List activeBuses = [];
+  Marker emptyMarker = Marker(markerId: MarkerId(""));
 
   testeFunction() {
     print(
@@ -40,98 +44,123 @@ class _UserMapPageState extends State<UserMapPage> {
     UpdateLocation();
     SystemChannels.textInput.invokeMethod('TextInput.hide');
     _customMarkerIcon();
+    _customBusMarkerIcon();
   }
 
   BitmapDescriptor _stopMarkerIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor _BusMarkerIcon = BitmapDescriptor.defaultMarker;
 
   @override
   Widget build(BuildContext context) {
     getPolylinePoints();
     final stop_provider = Provider.of<StopProvider>(context);
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            onPressed: testeFunction,
-            icon: Icon(
-              Icons.science,
-              color: Colors.white,
-            ),
-          )
-        ],
-        leading: stop_provider.isNearStopsVisible
-            ? IconButton(
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                ),
-                onPressed: stop_provider.hideNearStops,
-              )
-            : stop_provider.isStopInfoVisible
-                ? IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                    ),
-                    onPressed: stop_provider.hideStopInfo,
-                  )
-                : null,
-        toolbarHeight: 45,
-        title: const Text('ubus',
-            style: TextStyle(
-                fontFamily: 'Flix', color: Colors.white, fontSize: 37)),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF0057DA),
-      ),
-      body: _currentP == null
-          ? const Center(
-              child: SpinKitRing(
-                color: Colors.blue,
-                size: 50.0,
-              ),
-            )
-          : Column(
-              children: [
-                Expanded(
-                  flex: stop_provider.isNearStopsVisible ? 2 : 5,
-                  child: GoogleMap(
-                    mapToolbarEnabled: false,
-                    myLocationEnabled: true,
-                    myLocationButtonEnabled: true,
-                    onMapCreated: ((GoogleMapController controller) =>
-                        _mapController.complete(controller)),
-                    initialCameraPosition:
-                        CameraPosition(target: _currentP!, zoom: 15),
-                    zoomControlsEnabled: false,
-                    markers: {
-                      ...stops.map(
-                        (stp) {
-                          return Marker(
-                              markerId: MarkerId(stp.name),
-                              onTap: () {
-                                showModalBottomSheet(
-                                    shape: LinearBorder(side: BorderSide.none),
-                                    context: context,
-                                    builder: (context) => StopInfo(
-                                        stp.name,
-                                        PointLatLng(stp.coords.latitude,
-                                            stp.coords.longitude)));
-                              },
-                              position: stp.coords,
-                              icon: _stopMarkerIcon);
-                        },
-                      ),
-                    },
-                    polylines: stop_provider.stopCoords.latitude != 0.0
-                        ? Set<Polyline>.of(polylines.values)
-                        : {},
+    return StreamBuilder<QuerySnapshot>(
+        stream: CloudStore().getActiveBuses(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            activeBuses = snapshot.data!.docs;
+          }
+
+          if (!snapshot.hasData) {
+            activeBuses.clear();
+          }
+
+          return Scaffold(
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              actions: [
+                IconButton(
+                  onPressed: testeFunction,
+                  icon: Icon(
+                    Icons.science,
+                    color: Colors.white,
                   ),
-                ),
-                Expanded(child: BottomMenu())
+                )
               ],
+              leading: stop_provider.isNearStopsVisible
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                      ),
+                      onPressed: stop_provider.hideNearStops,
+                    )
+                  : stop_provider.isStopInfoVisible
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                          onPressed: stop_provider.hideStopInfo,
+                        )
+                      : null,
+              toolbarHeight: 45,
+              title: const Text('ubus',
+                  style: TextStyle(
+                      fontFamily: 'Flix', color: Colors.white, fontSize: 37)),
+              centerTitle: true,
+              backgroundColor: const Color(0xFF0057DA),
             ),
-    );
+            body: _currentP == null
+                ? const Center(
+                    child: SpinKitRing(
+                      color: Colors.blue,
+                      size: 50.0,
+                    ),
+                  )
+                : Column(
+                    children: [
+                      Expanded(
+                        flex: stop_provider.isNearStopsVisible ? 2 : 5,
+                        child: GoogleMap(
+                          mapToolbarEnabled: false,
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: true,
+                          onMapCreated: ((GoogleMapController controller) =>
+                              _mapController.complete(controller)),
+                          initialCameraPosition:
+                              CameraPosition(target: _currentP!, zoom: 15),
+                          zoomControlsEnabled: false,
+                          markers: {
+                            ...stops.map(
+                              (stp) {
+                                return Marker(
+                                    markerId: MarkerId(stp.name),
+                                    onTap: () {
+                                      showModalBottomSheet(
+                                          shape: LinearBorder(
+                                              side: BorderSide.none),
+                                          context: context,
+                                          builder: (context) => StopInfo(
+                                              stp.name,
+                                              PointLatLng(stp.coords.latitude,
+                                                  stp.coords.longitude)));
+                                    },
+                                    position: stp.coords,
+                                    icon: _stopMarkerIcon);
+                              },
+                            ),
+                            if (activeBuses.isEmpty)
+                              emptyMarker
+                            else
+                              ...activeBuses.map((aB) {
+                                return Marker(
+                                    markerId: MarkerId("Ônibus"),
+                                    position: LatLng(aB["coords"].latitude,
+                                        aB["coords"].longitude),
+                                    icon: _BusMarkerIcon);
+                              })
+                          },
+                          polylines: stop_provider.stopCoords.latitude != 0.0
+                              ? Set<Polyline>.of(polylines.values)
+                              : {},
+                        ),
+                      ),
+                      Expanded(child: BottomMenu())
+                    ],
+                  ),
+          );
+        });
   }
 
   // || GoogleMap Services||
@@ -155,6 +184,12 @@ class _UserMapPageState extends State<UserMapPage> {
     setState(() {});
   }
 
+  _customBusMarkerIcon() async {
+    final Uint8List customIcon =
+        await getBytesFromAssets("assets/bus_LocMark.png", 120);
+    _BusMarkerIcon = BitmapDescriptor.fromBytes(customIcon);
+    setState(() {});
+  }
   // Camera section
 
   Future<void> _cameraToPosition() async {

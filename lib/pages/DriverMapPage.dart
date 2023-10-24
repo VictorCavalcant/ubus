@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geolocator_android/geolocator_android.dart';
 import 'package:ubus/misc/consts.dart';
 import 'package:ubus/pages/SignIn.dart';
 import 'dart:ui' as ui;
@@ -39,12 +41,15 @@ class _DriverMapPageState extends State<DriverMapPage> {
       accuracy: LocationAccuracy.high,
       distanceFilter: 10,
     )).listen((Position position) {
-      _currentP = LatLng(position.latitude, position.longitude);
-      _cameraToPosition();
+      setState(() {
+        _currentP = LatLng(position.latitude, position.longitude);
+        _customMarkerIcon();
+        _cameraToPosition();
+      });
       if (isActive) {
         print("valor de isActive -> $isActive");
-        CloudStore()
-            .GetCoords(_currentDriverId, position.latitude, position.longitude);
+        CloudStore().GetCoords(
+            _currentDriverId, _currentP!.latitude, _currentP!.longitude);
       }
     });
     SystemChannels.textInput.invokeMethod('TextInput.hide');
@@ -110,6 +115,10 @@ class _DriverMapPageState extends State<DriverMapPage> {
                       );
                     },
                   ),
+                  ListTile(
+                    leading: Icon(Icons.settings),
+                    title: Text("Configurações de Localização"),
+                  ),
                 ],
               ),
             ),
@@ -153,6 +162,7 @@ class _DriverMapPageState extends State<DriverMapPage> {
                       Expanded(
                         flex: 5,
                         child: GoogleMap(
+                          myLocationEnabled: true,
                           mapToolbarEnabled: false,
                           onMapCreated: ((GoogleMapController controller) =>
                               _mapController.complete(controller)),
@@ -163,7 +173,8 @@ class _DriverMapPageState extends State<DriverMapPage> {
                             Marker(
                                 markerId: MarkerId(''),
                                 position: _currentP!,
-                                icon: _BusLocMarker)
+                                icon: _BusLocMarker,
+                                anchor: Offset(0.5, 0.5))
                           },
                         ),
                       ),
@@ -182,6 +193,12 @@ class _DriverMapPageState extends State<DriverMapPage> {
                                   onTap: () {
                                     CloudStore().ToggleActive(_currentDriverId,
                                         driverDocument["active"]);
+                                    if (!isActive) {
+                                      CloudStore().GetCoords(
+                                          _currentDriverId,
+                                          _currentP!.latitude,
+                                          _currentP!.longitude);
+                                    }
                                   },
                                   child: SizedBox(
                                     width: 100,
@@ -238,7 +255,7 @@ class _DriverMapPageState extends State<DriverMapPage> {
       final GoogleMapController controller = await _mapController.future;
       controller.moveCamera(
         CameraUpdate.newCameraPosition(
-          CameraPosition(target: _currentP!, zoom: 15),
+          CameraPosition(target: _currentP!, zoom: 18),
         ),
       );
     }
@@ -274,6 +291,56 @@ class _DriverMapPageState extends State<DriverMapPage> {
 
     setState(() {
       _currentP = LatLng(_currentL.latitude, _currentL.longitude);
+    });
+  }
+
+  void location_settings() {
+    late LocationSettings locationSettings;
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 100,
+          forceLocationManager: true,
+          intervalDuration: const Duration(seconds: 10),
+          //(Optional) Set foreground notification config to keep the app alive
+          //when going to the background
+          foregroundNotificationConfig: const ForegroundNotificationConfig(
+            notificationText:
+                "Ubus will continue to receive your location even when you aren't using it",
+            notificationTitle: "Running in Background",
+            enableWakeLock: true,
+          ));
+    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.high,
+        activityType: ActivityType.fitness,
+        distanceFilter: 100,
+        pauseLocationUpdatesAutomatically: true,
+        // Only set to true if our app will be started up in the background.
+        showBackgroundLocationIndicator: false,
+      );
+    } else {
+      locationSettings = LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 100,
+      );
+    }
+
+    StreamSubscription<Position> positionStream =
+        Geolocator.getPositionStream(locationSettings: locationSettings)
+            .listen((Position? position) {
+      setState(() {
+        _currentP = LatLng(position!.latitude, position.longitude);
+        _customMarkerIcon();
+        _cameraToPosition();
+      });
+      if (isActive) {
+        print("valor de isActive -> $isActive");
+        CloudStore().GetCoords(
+            _currentDriverId, _currentP!.latitude, _currentP!.longitude);
+      }
     });
   }
 }
