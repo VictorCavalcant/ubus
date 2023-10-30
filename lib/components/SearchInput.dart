@@ -6,22 +6,22 @@ class SearchInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 96),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 96),
       child: TextField(
         decoration: InputDecoration(
           hintText: 'Que ônibus deseja encontrar?',
-          hintStyle: TextStyle(fontWeight: FontWeight.bold),
-          fillColor: Color(0xFFD7D7D7),
-          suffixIconColor: Color.fromARGB(189, 51, 51, 51),
-          suffixIcon: Icon(
+          hintStyle: const TextStyle(fontWeight: FontWeight.bold),
+          fillColor: const Color(0xFFD7D7D7),
+          suffixIconColor: const Color.fromARGB(189, 51, 51, 51),
+          suffixIcon: const Icon(
             Icons.search,
             size: 40,
           ),
           border: OutlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFD7D7D7)),
+              borderSide: const BorderSide(color: Color(0xFFD7D7D7)),
               borderRadius: BorderRadius.circular(25)),
           focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Color(0xFFD7D7D7)),
+              borderSide: const BorderSide(color: Color(0xFFD7D7D7)),
               borderRadius: BorderRadius.circular(25)),
         ),
       ),

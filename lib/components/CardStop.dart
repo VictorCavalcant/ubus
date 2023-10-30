@@ -16,44 +16,48 @@ class CardStop extends StatelessWidget {
     final stop_provider = Provider.of<StopProvider>(context);
     return Card(
       child: Container(
-        width: double.infinity,
+        width: MediaQuery.of(context).size.width,
         height: 60,
-        child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          Container(
-            margin: const EdgeInsets.only(left: 5),
-            child: Image.asset(
-              'assets/bus_stop-icon_t.png',
-              fit: BoxFit.contain,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(left: 5),
+              child: Image.asset(
+                'assets/bus_stop-icon_t.png',
+                fit: BoxFit.contain,
+              ),
             ),
-          ),
-          const SizedBox(
-            width: 10,
-          ),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 19,
+            const SizedBox(
+              width: 10,
             ),
-          ),
-          IconButton(
-            onPressed: () {
-              context
-                  .read<StopProvider>()
-                  .getStopDestination(PointLatLng(lat, long), title);
-            },
-            icon: const Icon(
-              Icons.directions,
-              color: Colors.blue,
-              size: 30,
+            Text(
+              title,
+              softWrap: true,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 19,
+              ),
             ),
-          ),
-          stop_provider.distance != null &&
-                  stop_provider.duration != null &&
-                  title == context.watch<StopProvider>().stopName
-              ? Metrics(stop_provider.distance, stop_provider.duration)
-              : Container()
-        ]),
+            IconButton(
+              onPressed: () {
+                context
+                    .read<StopProvider>()
+                    .getStopDestination(PointLatLng(lat, long), title);
+              },
+              icon: const Icon(
+                Icons.directions,
+                color: Colors.blue,
+                size: 30,
+              ),
+            ),
+            stop_provider.distance != null &&
+                    stop_provider.duration != null &&
+                    title == context.watch<StopProvider>().stopName
+                ? Metrics(stop_provider.distance, stop_provider.duration)
+                : Container()
+          ],
+        ),
       ),
     );
   }

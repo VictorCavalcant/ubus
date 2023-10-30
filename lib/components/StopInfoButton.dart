@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ubus/misc/consts.dart';
 
-class StopInfoButton extends StatelessWidget {
+class StopInfoButton extends StatefulWidget {
   StopInfoButton({this.title, this.icon, this.image, this.function});
 
   String? title;
@@ -9,6 +9,11 @@ class StopInfoButton extends StatelessWidget {
   IconData? icon;
   String? image;
 
+  @override
+  State<StopInfoButton> createState() => _StopInfoButtonState();
+}
+
+class _StopInfoButtonState extends State<StopInfoButton> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -21,26 +26,27 @@ class StopInfoButton extends StatelessWidget {
               color: primaryColor, // Button color
               child: InkWell(
                 onTap: () {
-                  function!();
+                  widget.function!();
                 },
                 child: SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: image != null
-                        ? Image.asset(image!)
-                        : Icon(
-                            icon,
-                            color: Colors.white,
-                            size: 30,
-                          )),
+                  width: 56,
+                  height: 56,
+                  child: widget.image != null
+                      ? Image.asset(widget.image!)
+                      : Icon(
+                          widget.icon,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                ),
               ),
             ),
           ),
         ),
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
         Text(
-          title != null ? title! : '',
-          style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
+          widget.title != null ? widget.title! : '',
+          style: const TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
         )
       ],
     );

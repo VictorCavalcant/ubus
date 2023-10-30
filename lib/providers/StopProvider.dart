@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ubus/data/stops.dart';
 import 'package:ubus/scripts/nearPoints.dart';
 
@@ -11,7 +12,7 @@ class StopProvider extends ChangeNotifier {
   bool isNearStopsVisible;
   bool isStopInfoVisible;
   List? nearsStops;
-  double CurrentLoc_lat;
+  LatLng? currentLoc;
   bool isGettingTD = false;
 
   StopProvider(
@@ -20,7 +21,7 @@ class StopProvider extends ChangeNotifier {
       this.isNearStopsVisible = false,
       this.isStopInfoVisible = false,
       this.nearsStops,
-      this.CurrentLoc_lat = 0.0});
+      this.currentLoc});
 
   getStopDestination(PointLatLng value, String name) async {
     stopName = name;
@@ -45,18 +46,21 @@ class StopProvider extends ChangeNotifier {
     isGettingTD = false;
   }
 
-  dynamic showNearStops() {
+  dynamic showNearStops() async {
+    isStopInfoVisible = false;
     isNearStopsVisible = true;
     isGettingTD = true;
-    nearsStops = getNearPoints(stops, CurrentLoc_lat);
+    nearsStops = await getNearPoints(stops, currentLoc!);
     notifyListeners();
   }
 
-  void getCurrentLat(value) {
-    CurrentLoc_lat = value;
+  getCurrentLoc(value) {
+    currentLoc = value;
+    notifyListeners();
   }
 
   setStopInfoTrue() {
+    isNearStopsVisible = false;
     isStopInfoVisible = true;
     isGettingTD = true;
   }

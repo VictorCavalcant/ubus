@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:ubus/services/CloudStore.dart';
+import 'package:ubus/services/DriverService.dart';
 
 class AuthService {
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -11,7 +11,7 @@ class AuthService {
       UserCredential userCredential = await _firebaseAuth
           .createUserWithEmailAndPassword(email: email, password: password);
       await userCredential.user!.updateDisplayName(name);
-      CloudStore().addUser(userCredential.user!.uid);
+      DriverService().addUser(userCredential.user!.uid);
       userCredential.user!.reload();
       return null;
     } on FirebaseAuthException catch (e) {

@@ -15,7 +15,7 @@ class MainMenu extends StatelessWidget {
       children: [
         MenuItem('Paradas Próximas', 'assets/bus-stop.png',
             context.read<StopProvider>().showNearStops),
-        VerticalDivider(),
+        const VerticalDivider(),
         MenuItem('Buscar Ônibus', 'assets/bus_Search2.png', () {
           Navigator.push(
               context, MaterialPageRoute(builder: (context) => SearchBus()));

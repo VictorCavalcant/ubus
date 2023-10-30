@@ -10,7 +10,7 @@ class Metrics extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(Icons.directions_walk),
+        const Icon(Icons.directions_walk),
         Text(
           distance!,
           style: const TextStyle(
@@ -21,7 +21,7 @@ class Metrics extends StatelessWidget {
         const SizedBox(
           width: 10,
         ),
-        Icon(Icons.timer),
+        const Icon(Icons.timer),
         Text(
           time_distance!,
           style: const TextStyle(

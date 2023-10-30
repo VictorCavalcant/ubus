@@ -7,13 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:geolocator_android/geolocator_android.dart';
+import 'package:provider/provider.dart';
 import 'package:ubus/misc/consts.dart';
 import 'package:ubus/pages/SignIn.dart';
+import 'package:ubus/providers/BusDriverProvider.dart';
 import 'dart:ui' as ui;
 
 import 'package:ubus/services/Auth_service.dart';
-import 'package:ubus/services/CloudStore.dart';
+import 'package:ubus/services/DriverService.dart';
 
 class DriverMapPage extends StatefulWidget {
   const DriverMapPage({super.key});
@@ -25,33 +26,33 @@ class DriverMapPage extends StatefulWidget {
 class _DriverMapPageState extends State<DriverMapPage> {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
+  Set<Marker> marker = Set();
 
   LatLng? _currentP;
-  int zoomValue = 17;
   final _currentDriverName = FirebaseAuth.instance.currentUser!.displayName;
   final _currentDriverId = FirebaseAuth.instance.currentUser!.uid;
   bool isActive = false;
+  Marker Bus_Marker = Marker(
+    markerId: MarkerId(''),
+  );
+
+  addMarker(Position position) {
+    Marker resultMarker = Marker(
+      markerId: MarkerId("Ônibus"),
+      position: LatLng(position.latitude, position.longitude),
+      icon: _BusLocMarker,
+      anchor: Offset(0.5, 0.5),
+    );
+
+    marker = {};
+    marker.add(resultMarker);
+  }
 
   @override
   void initState() {
     super.initState();
     getCurrentPosition();
-    Geolocator.getPositionStream(
-        locationSettings: LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    )).listen((Position position) {
-      setState(() {
-        _currentP = LatLng(position.latitude, position.longitude);
-        _customMarkerIcon();
-        _cameraToPosition();
-      });
-      if (isActive) {
-        print("valor de isActive -> $isActive");
-        CloudStore().GetCoords(
-            _currentDriverId, _currentP!.latitude, _currentP!.longitude);
-      }
-    });
+    updatePosition();
     SystemChannels.textInput.invokeMethod('TextInput.hide');
     _customMarkerIcon();
   }
@@ -68,14 +69,17 @@ class _DriverMapPageState extends State<DriverMapPage> {
 
   @override
   Widget build(BuildContext context) {
+    final driver_provider = Provider.of<BusDriverProvider>(context);
     return StreamBuilder<DocumentSnapshot>(
-        stream: CloudStore().getDriversStream(_currentDriverId),
+        stream: DriverService().getDriversStream(_currentDriverId),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(
-              child: SpinKitRing(
-                color: Colors.blue,
-                size: 50.0,
+            return Scaffold(
+              body: const Center(
+                child: const SpinKitRing(
+                  color: Colors.blue,
+                  size: 50.0,
+                ),
               ),
             );
           }
@@ -85,7 +89,7 @@ class _DriverMapPageState extends State<DriverMapPage> {
           isActive = driverDocument!["active"];
 
           if (!isActive) {
-            CloudStore().ResetCoords(_currentDriverId);
+            DriverService().ResetCoords(_currentDriverId);
           }
 
           return Scaffold(
@@ -93,7 +97,7 @@ class _DriverMapPageState extends State<DriverMapPage> {
               child: ListView(
                 children: [
                   ListTile(
-                    leading: CircleAvatar(
+                    leading: const CircleAvatar(
                       backgroundColor: primaryColor,
                       child: Icon(
                         Icons.person,
@@ -103,8 +107,8 @@ class _DriverMapPageState extends State<DriverMapPage> {
                     title: Text('${_currentDriverName}'),
                   ),
                   ListTile(
-                    leading: Icon(Icons.logout),
-                    title: Text("Sair"),
+                    leading: const Icon(Icons.logout),
+                    title: const Text("Sair"),
                     onTap: () {
                       AuthService().signOut();
                       Navigator.pushReplacement(
@@ -115,10 +119,6 @@ class _DriverMapPageState extends State<DriverMapPage> {
                       );
                     },
                   ),
-                  ListTile(
-                    leading: Icon(Icons.settings),
-                    title: Text("Configurações de Localização"),
-                  ),
                 ],
               ),
             ),
@@ -128,7 +128,7 @@ class _DriverMapPageState extends State<DriverMapPage> {
                 width: 40,
                 height: 40,
                 child: FloatingActionButton(
-                    child: Icon(Icons.gps_fixed),
+                    child: const Icon(Icons.gps_fixed),
                     onPressed: () {
                       GetClocation();
                     }),
@@ -139,20 +139,20 @@ class _DriverMapPageState extends State<DriverMapPage> {
               actions: [
                 IconButton(
                   onPressed: testeFunction,
-                  icon: Icon(Icons.science),
+                  icon: const Icon(Icons.science),
                 )
               ],
-              iconTheme: IconThemeData(color: Colors.white),
+              iconTheme: const IconThemeData(color: Colors.white),
               toolbarHeight: 45,
               title: const Text('ubus',
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontFamily: 'Flix', color: Colors.white, fontSize: 37)),
               centerTitle: true,
               backgroundColor: const Color(0xFF0057DA),
             ),
-            body: _currentP == null
+            body: driver_provider.driverLoc == null
                 ? const Center(
-                    child: SpinKitRing(
+                    child: const SpinKitRing(
                       color: Colors.blue,
                       size: 50.0,
                     ),
@@ -162,21 +162,15 @@ class _DriverMapPageState extends State<DriverMapPage> {
                       Expanded(
                         flex: 5,
                         child: GoogleMap(
-                          myLocationEnabled: true,
-                          mapToolbarEnabled: false,
-                          onMapCreated: ((GoogleMapController controller) =>
-                              _mapController.complete(controller)),
-                          initialCameraPosition:
-                              CameraPosition(target: _currentP!, zoom: 15),
-                          zoomControlsEnabled: false,
-                          markers: {
-                            Marker(
-                                markerId: MarkerId(''),
-                                position: _currentP!,
-                                icon: _BusLocMarker,
-                                anchor: Offset(0.5, 0.5))
-                          },
-                        ),
+                            myLocationEnabled: true,
+                            myLocationButtonEnabled: false,
+                            mapToolbarEnabled: false,
+                            onMapCreated: ((GoogleMapController controller) =>
+                                _mapController.complete(controller)),
+                            initialCameraPosition: CameraPosition(
+                                target: driver_provider.driverLoc!, zoom: 15),
+                            zoomControlsEnabled: false,
+                            markers: marker),
                       ),
                       Expanded(
                         child: Container(
@@ -186,33 +180,35 @@ class _DriverMapPageState extends State<DriverMapPage> {
                           child: Center(
                             child: ClipOval(
                               child: Material(
-                                color: !driverDocument["active"]
+                                color: !isActive
                                     ? Colors.green
                                     : Colors.red, // Button color
                                 child: InkWell(
                                   onTap: () {
-                                    CloudStore().ToggleActive(_currentDriverId,
-                                        driverDocument["active"]);
+                                    DriverService().ToggleActive(
+                                        _currentDriverId,
+                                        isActive);
                                     if (!isActive) {
-                                      CloudStore().GetCoords(
+                                      DriverService().GetCoords(
                                           _currentDriverId,
-                                          _currentP!.latitude,
-                                          _currentP!.longitude);
+                                          driver_provider.driverLoc!.latitude,
+                                          driver_provider.driverLoc!.longitude);
                                     }
                                   },
                                   child: SizedBox(
                                     width: 100,
                                     height: 100,
                                     child: Center(
-                                        child: Text(
-                                      !driverDocument["active"]
-                                          ? "INICIAR"
-                                          : "PARAR",
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20),
-                                    )),
+                                      child: Text(
+                                        !driverDocument["active"]
+                                            ? "INICIAR"
+                                            : "PARAR",
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 20),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -250,97 +246,27 @@ class _DriverMapPageState extends State<DriverMapPage> {
   // Camera section
 
   Future<void> _cameraToPosition() async {
-    if (_currentP != null) {
-      _customMarkerIcon();
-      final GoogleMapController controller = await _mapController.future;
-      controller.moveCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: _currentP!, zoom: 18),
-        ),
-      );
-    }
+    final driver_provider = context.read<BusDriverProvider>();
+    final GoogleMapController controller = await _mapController.future;
+    controller.moveCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(target: driver_provider.driverLoc!, zoom: 18),
+      ),
+    );
   }
 
   // Location Section
 
   void getCurrentPosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+    final driver_provider = context.read<BusDriverProvider>();
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-
-    if (!serviceEnabled) {
-      return Future.error('Location permission are denied');
-    }
-
-    permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are denied forever!');
-    }
-
-    Position? _currentL = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-
-    setState(() {
-      _currentP = LatLng(_currentL.latitude, _currentL.longitude);
-    });
+    await driver_provider.getCurrentLocation();
   }
 
-  void location_settings() {
-    late LocationSettings locationSettings;
+  void updatePosition() async {
+    final driver_provider = context.read<BusDriverProvider>();
 
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      locationSettings = AndroidSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 100,
-          forceLocationManager: true,
-          intervalDuration: const Duration(seconds: 10),
-          //(Optional) Set foreground notification config to keep the app alive
-          //when going to the background
-          foregroundNotificationConfig: const ForegroundNotificationConfig(
-            notificationText:
-                "Ubus will continue to receive your location even when you aren't using it",
-            notificationTitle: "Running in Background",
-            enableWakeLock: true,
-          ));
-    } else if (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS) {
-      locationSettings = AppleSettings(
-        accuracy: LocationAccuracy.high,
-        activityType: ActivityType.fitness,
-        distanceFilter: 100,
-        pauseLocationUpdatesAutomatically: true,
-        // Only set to true if our app will be started up in the background.
-        showBackgroundLocationIndicator: false,
-      );
-    } else {
-      locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 100,
-      );
-    }
-
-    StreamSubscription<Position> positionStream =
-        Geolocator.getPositionStream(locationSettings: locationSettings)
-            .listen((Position? position) {
-      setState(() {
-        _currentP = LatLng(position!.latitude, position.longitude);
-        _customMarkerIcon();
-        _cameraToPosition();
-      });
-      if (isActive) {
-        print("valor de isActive -> $isActive");
-        CloudStore().GetCoords(
-            _currentDriverId, _currentP!.latitude, _currentP!.longitude);
-      }
-    });
+    await driver_provider.updateLocation(
+        cameraFunction: _cameraToPosition, addMarker: addMarker);
   }
 }

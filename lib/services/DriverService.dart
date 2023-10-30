@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class CloudStore {
+class DriverService {
   final CollectionReference drivers =
       FirebaseFirestore.instance.collection("drivers");
 

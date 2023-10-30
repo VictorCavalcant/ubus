@@ -1,59 +1,114 @@
-import 'dart:math';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ubus/data/stops.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
-class Diflongs {
+class CoordTime_Distance {
   String name = '';
-  double difLong = 0.0;
   LatLng coords = LatLng(0.0, 0.0);
+  double distance = 0;
+  int duration = 0;
 
-  Diflongs(this.name, this.difLong, this.coords);
+  CoordTime_Distance(this.name, this.coords, this.distance, this.duration);
 }
 
-  double getMaxValue(List array) {
-    double big = array[0];
-    for (var i = 1; i < array.length; i++) {
-      big = max(big, array[i]);
+Future<List<CoordTime_Distance>> getPointsTD(
+    List<Stop> array, LatLng myLoc) async {
+  List<CoordTime_Distance> points = [];
+  String removeKm = '';
+  double distance_double = 0.0;
+  String removeMins = '';
+  String removeMin = '';
+  int duration_int = 0;
+
+  for (var i = 0; i < array.length; i++) {
+    PolylinePoints polylinePoints = PolylinePoints();
+    PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+      dotenv.env['GOOGLE_MAPS_KEY'].toString(),
+      PointLatLng(myLoc.latitude, myLoc.longitude),
+      PointLatLng(array[i].coords.latitude, array[i].coords.longitude),
+      travelMode: TravelMode.walking,
+    );
+
+    removeKm = result.distance!.replaceAll('km', '');
+    distance_double = double.parse(removeKm);
+    removeMins = result.duration!.replaceAll('mins', '');
+
+    if (removeMins.contains('min')) {
+      removeMin = result.duration!.replaceAll('min', '');
     }
-    return big;
+
+    if (removeMin == '') {
+      duration_int = int.parse(removeMins);
+    } else {
+      duration_int = int.parse(removeMin);
+    }
+
+    points.add(CoordTime_Distance(
+        array[i].name, array[i].coords, distance_double, duration_int));
   }
+  return points;
+}
 
-  List threeNearestPoints(List array) {
-    var near1, near2, near3 = 0.0;
-    List nears = [];
-    final onlyValues = array.map((e) => e.difLong).toList();
+getNearPoint(List<CoordTime_Distance> points) {
+  CoordTime_Distance nearPoint;
+  dynamic getSpecificPoint;
+  String point_name;
+  LatLng point_coords;
+  double nearestDistance = points[0].distance;
+  int time_minimun = points[0].duration;
 
-    near1 = getMaxValue(onlyValues);
-    near2 = getMaxValue(onlyValues.where((fl) => fl != near1).toList());
-    near3 = getMaxValue(
-        onlyValues.where((fl) => fl != near1 && fl != near2).toList());
+  for (var i = 1; i < points.length; i++) {
+    if (nearestDistance > points[i].distance) {
+      nearestDistance = points[i].distance;
+      time_minimun = points[i].duration;
+    }
 
-    nears.addAll([near1, near2, near3].toList());
-    nears.sort();
-    List result;
-
-    result = array.where((fl) => nears.contains(fl.difLong)).toList();
-    return result;
-  }
-
-  List getNearPoints(List<Stop> array, myLocLong) {
-    List nearPoints, difsLongs = [];
-
-    for (var i = 0; i < array.length; i++) {
-      var _difLong = myLocLong - array[i].coords.longitude;
-      if (_difLong > 0) {
-        _difLong *= -1;
+    if (nearestDistance == points[i].distance) {
+      if (time_minimun > points[i].duration) {
+        time_minimun = points[i].duration;
       }
-      difsLongs = [
-        ...difsLongs,
-        Diflongs(array[i].name, _difLong,
-            LatLng(array[i].coords.latitude, array[i].coords.longitude))
-      ];
     }
-
-    nearPoints = threeNearestPoints(difsLongs);
-
-    return nearPoints;
   }
+
+  getSpecificPoint = points
+      .where((point) =>
+          point.distance == nearestDistance && point.duration == time_minimun)
+      .toList();
+  point_name = getSpecificPoint[0].name;
+  point_coords = getSpecificPoint[0].coords;
+
+  nearPoint = CoordTime_Distance(
+      point_name, point_coords, nearestDistance, time_minimun);
+
+  return nearPoint;
+}
+
+getThreeNearestPoints(List<CoordTime_Distance> points) {
+  List<CoordTime_Distance> filterList = [];
+  CoordTime_Distance near1, near2, near3;
+
+  near1 = getNearPoint(points);
+  filterList.add(near1);
+  near2 =
+      getNearPoint(points.where((point) => point.name != near1.name).toList());
+  filterList.add(near2);
+  near3 = getNearPoint(points
+      .where((point) => point.name != near1.name && point.name != near2.name)
+      .toList());
+  filterList.add(near3);
+
+  return filterList;
+}
+
+Future<List> getNearPoints(List<Stop> array, LatLng myLoc) async {
+  List nearPoints;
+  List<CoordTime_Distance> pointsTD = [];
+  pointsTD = await getPointsTD(array, myLoc);
+
+  nearPoints = getThreeNearestPoints(pointsTD);
+
+  return nearPoints;
+}
+
 
