@@ -50,7 +50,7 @@ class StopProvider extends ChangeNotifier {
     isStopInfoVisible = false;
     isNearStopsVisible = true;
     isGettingTD = true;
-    nearsStops = await getNearPoints(stops, currentLoc!);
+    nearsStops = await getNearPoints(stops_t, currentLoc!);
     notifyListeners();
   }
 

@@ -5,17 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import 'package:ubus/components/BottomMenu.dart';
 import 'package:ubus/components/StopInfo.dart';
+import 'package:ubus/data/regions_points.dart';
+import 'package:ubus/data/regions_stops.dart';
 import 'dart:ui' as ui;
 import 'package:ubus/data/stops.dart';
 import 'package:ubus/providers/StopProvider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:ubus/providers/UserLocationProvider.dart';
 import 'package:ubus/services/DriverService.dart';
-import 'package:maps_toolkit/maps_toolkit.dart' as mpt;
 import 'package:ubus/services/StopService.dart';
 
 class UserMapPage extends StatefulWidget {
@@ -29,43 +29,16 @@ class _UserMapPageState extends State<UserMapPage> {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
-  List<LatLng> polygonPoints = [
-    LatLng(-2.920113802393552, -41.76300037572107), //start point
-    LatLng(-2.920136661241771, -41.76098973218705),
-    LatLng(-2.9202529392014505, -41.75895636744167),
-    LatLng(-2.923760302277007, -41.75973714057531),
-    LatLng(-2.9216765178820934, -41.7621293583059),
-    LatLng(-2.920113802393552, -41.76300037572107), // end point
-  ];
-
-  bool isInTheArea = true;
-
-  void checkUpdatedLocation(LatLng pointLatLng) {
-    List<mpt.LatLng> convertedPolygonPoints = polygonPoints
-        .map(
-          (point) => mpt.LatLng(point.latitude, point.longitude),
-        )
-        .toList();
-    setState(() {
-      isInTheArea = mpt.PolygonUtil.containsLocation(
-          mpt.LatLng(pointLatLng.latitude, pointLatLng.longitude),
-          convertedPolygonPoints,
-          false);
-    });
-  }
-
   Map<PolylineId, Polyline> polylines = {};
   List activeBuses = [];
   Marker emptyMarker = Marker(markerId: MarkerId(""));
 
-  testeFunction() async {
-    // final userLoc_provider = context.read<UserLocationProvider>();
-    // print(userLoc_provider.userLoc);
-    dynamic distanceBetween = await Geolocator.distanceBetween(
-        -2.9200933, -41.7620267, -2.920136661241771, -41.76098973218705);
-    double result = distanceBetween as double;
+  testeFunction() {
+    print(regions_stops[0]);
+  }
 
-    print("A distância foi de: ${result.ceil()}");
+  rebuild() {
+    setState(() {});
   }
 
   @override
@@ -73,6 +46,7 @@ class _UserMapPageState extends State<UserMapPage> {
     super.initState();
     getCurrentPosition();
     UpdateLocation();
+    StopService().getCollectionData(function: rebuild);
     SystemChannels.textInput.invokeMethod('TextInput.hide');
     _customMarkerIcon();
   }
@@ -82,6 +56,7 @@ class _UserMapPageState extends State<UserMapPage> {
   @override
   Widget build(BuildContext context) {
     getPolylinePoints();
+
     final stop_provider = Provider.of<StopProvider>(context);
     final userLoc_provider = Provider.of<UserLocationProvider>(context);
     return StreamBuilder<QuerySnapshot>(
@@ -98,20 +73,7 @@ class _UserMapPageState extends State<UserMapPage> {
             );
           }
 
-          final stops_fb = snapshot.data!.docs;
-
-          for (var stop_fb in stops_fb) {
-            var stop_name = stop_fb['name'].replaceAll('\\n', '\n');
-
-            stops.add(
-              Stop(
-                stop_name,
-                LatLng(stop_fb['coords'].latitude, stop_fb['coords'].longitude),
-              ),
-            );
-          }
-
-          if (stops.isEmpty) {
+          if (stops_t.isEmpty) {
             return Scaffold(
               body: const Center(
                 child: const SpinKitRing(
@@ -179,7 +141,7 @@ class _UserMapPageState extends State<UserMapPage> {
                               target: userLoc_provider.userLoc, zoom: 15),
                           zoomControlsEnabled: false,
                           markers: {
-                            ...stops.map(
+                            ...stops_t.map(
                               (stp) {
                                 return Marker(
                                     markerId: MarkerId(stp.name),
@@ -206,13 +168,14 @@ class _UserMapPageState extends State<UserMapPage> {
                               ? Set<Polyline>.of(polylines.values)
                               : {},
                           polygons: {
-                            Polygon(
-                                polygonId: PolygonId("1"),
-                                fillColor:
-                                    const Color.fromARGB(75, 33, 149, 243),
-                                strokeWidth: 1,
-                                strokeColor: const Color.fromARGB(45, 0, 0, 0),
-                                points: polygonPoints)
+                            ...regions_points.map((rp) {
+                              return Polygon(
+                                  polygonId: PolygonId(rp.name),
+                                  points: rp.points,
+                                  fillColor: Color.fromARGB(6, 33, 149, 243),
+                                  strokeColor: Color.fromARGB(6, 0, 0, 0),
+                                  strokeWidth: 2);
+                            })
                           },
                         ),
                       ),

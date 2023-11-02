@@ -2,6 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ubus/data/stops.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:ubus/models/Stop.dart';
 
 class CoordTime_Distance {
   String name = '';

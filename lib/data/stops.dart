@@ -1,12 +1,7 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:ubus/models/Stop.dart';
 
-class Stop {
-  final String name;
-  final LatLng coords;
-  const Stop(this.name, this.coords);
-}
-
-List<Stop> stops = [
+List<Stop> stops_t = [
   // Stop(
   //   'Ipase',
   //   LatLng(-2.920136661241771, -41.76098973218705),
@@ -28,7 +23,6 @@ List<Stop> stops = [
   //   LatLng(-2.9202553191642218, -41.758935122921095),
   // ),
 ];
-
 
 /*
 
