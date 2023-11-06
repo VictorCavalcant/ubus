@@ -19,7 +19,7 @@ class Metrics extends StatelessWidget {
           ),
         ),
         const SizedBox(
-          width: 10,
+          width: 7,
         ),
         const Icon(Icons.timer),
         Text(

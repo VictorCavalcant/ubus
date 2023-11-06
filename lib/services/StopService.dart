@@ -49,7 +49,7 @@ class StopService {
       RegionStops("UESPI - UFDPAR", Uespi_UFDPAR)
     ].toList());
 
-    function();
+    await function();
   }
 
   Stream<QuerySnapshot> getStopsStream() {

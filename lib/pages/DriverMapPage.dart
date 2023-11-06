@@ -84,6 +84,7 @@ class _DriverMapPageState extends State<DriverMapPage> {
             );
           }
 
+
           final driverDocument = snapshot.data;
 
           isActive = driverDocument!["active"];
@@ -186,8 +187,7 @@ class _DriverMapPageState extends State<DriverMapPage> {
                                 child: InkWell(
                                   onTap: () {
                                     DriverService().ToggleActive(
-                                        _currentDriverId,
-                                        isActive);
+                                        _currentDriverId, isActive);
                                     if (!isActive) {
                                       DriverService().GetCoords(
                                           _currentDriverId,

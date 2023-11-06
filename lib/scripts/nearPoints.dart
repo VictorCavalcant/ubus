@@ -1,6 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:ubus/data/stops.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:ubus/models/Stop.dart';
 
@@ -16,7 +15,8 @@ class CoordTime_Distance {
 Future<List<CoordTime_Distance>> getPointsTD(
     List<Stop> array, LatLng myLoc) async {
   List<CoordTime_Distance> points = [];
-  String removeKm = '';
+  String removeM = '';
+  String removeK = '';
   double distance_double = 0.0;
   String removeMins = '';
   String removeMin = '';
@@ -31,8 +31,15 @@ Future<List<CoordTime_Distance>> getPointsTD(
       travelMode: TravelMode.walking,
     );
 
-    removeKm = result.distance!.replaceAll('km', '');
-    distance_double = double.parse(removeKm);
+    removeM = result.distance!.replaceAll('m', '');
+
+    if (removeM.contains('k')) {
+      removeK = removeM.replaceAll('k', '');
+      distance_double = double.parse(removeK) * 10000;
+    } else if (!removeM.contains('m')) {
+      distance_double = double.parse(removeM);
+    }
+
     removeMins = result.duration!.replaceAll('mins', '');
 
     if (removeMins.contains('min')) {
@@ -111,5 +118,3 @@ Future<List> getNearPoints(List<Stop> array, LatLng myLoc) async {
 
   return nearPoints;
 }
-
-

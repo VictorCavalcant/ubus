@@ -9,9 +9,9 @@ import 'package:provider/provider.dart';
 import 'package:ubus/components/BottomMenu.dart';
 import 'package:ubus/components/StopInfo.dart';
 import 'package:ubus/data/regions_points.dart';
-import 'package:ubus/data/regions_stops.dart';
 import 'dart:ui' as ui;
 import 'package:ubus/data/stops.dart';
+import 'package:ubus/providers/RegionProvider.dart';
 import 'package:ubus/providers/StopProvider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:ubus/providers/UserLocationProvider.dart';
@@ -29,12 +29,19 @@ class _UserMapPageState extends State<UserMapPage> {
   final Completer<GoogleMapController> _mapController =
       Completer<GoogleMapController>();
 
+  Set<Marker> aB_markers = Set();
   Map<PolylineId, Polyline> polylines = {};
   List activeBuses = [];
   Marker emptyMarker = Marker(markerId: MarkerId(""));
 
   testeFunction() {
-    print(regions_stops[0]);
+    final region_provider = context.read<RegionProvider>();
+    final userLoc_provider = context.read<UserLocationProvider>();
+
+    print(region_provider.isInTheArea);
+    print(userLoc_provider.userLoc);
+    print(
+        "stops de RegionProvider ta vazio? ---> ${region_provider.stops.isEmpty}");
   }
 
   rebuild() {
@@ -44,14 +51,18 @@ class _UserMapPageState extends State<UserMapPage> {
   @override
   void initState() {
     super.initState();
-    getCurrentPosition();
-    UpdateLocation();
     StopService().getCollectionData(function: rebuild);
+    Timer(Duration(seconds: 3), () {
+      getCurrentPosition();
+      UpdateLocation();
+    });
     SystemChannels.textInput.invokeMethod('TextInput.hide');
-    _customMarkerIcon();
+    _customStopMarkerIcon();
+    _customBusMarkerIcon();
   }
 
   BitmapDescriptor _stopMarkerIcon = BitmapDescriptor.defaultMarker;
+  BitmapDescriptor _busMarkerIcon = BitmapDescriptor.defaultMarker;
 
   @override
   Widget build(BuildContext context) {
@@ -60,130 +71,164 @@ class _UserMapPageState extends State<UserMapPage> {
     final stop_provider = Provider.of<StopProvider>(context);
     final userLoc_provider = Provider.of<UserLocationProvider>(context);
     return StreamBuilder<QuerySnapshot>(
-        stream: StopService().getStopsStream(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Scaffold(
-              body: const Center(
-                child: const SpinKitRing(
-                  color: Colors.blue,
-                  size: 50.0,
-                ),
-              ),
-            );
-          }
-
-          if (stops_t.isEmpty) {
-            return Scaffold(
-              body: const Center(
-                child: const SpinKitRing(
-                  color: Colors.blue,
-                  size: 50.0,
-                ),
-              ),
-            );
-          }
-
+      stream: StopService().getStopsStream(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
           return Scaffold(
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-              actions: [
-                IconButton(
-                  onPressed: testeFunction,
-                  icon: const Icon(
-                    Icons.science,
-                    color: Colors.white,
-                  ),
-                )
-              ],
-              leading: stop_provider.isNearStopsVisible
-                  ? IconButton(
+            body: const Center(
+              child: const SpinKitRing(
+                color: Colors.blue,
+                size: 50.0,
+              ),
+            ),
+          );
+        }
+
+        if (stops_t.isEmpty) {
+          return Scaffold(
+            body: const Center(
+              child: const SpinKitRing(
+                color: Colors.blue,
+                size: 50.0,
+              ),
+            ),
+          );
+        }
+
+        return StreamBuilder<QuerySnapshot>(
+            stream: DriverService().getActiveBuses(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                activeBuses.clear();
+              }
+
+              if (snapshot.hasData) {
+                activeBuses = snapshot.data!.docs;
+                Timer(Duration(seconds: 4), () {
+                  setState(() {});
+                });
+              }
+
+              return Scaffold(
+                appBar: AppBar(
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    IconButton(
+                      onPressed: testeFunction,
                       icon: const Icon(
-                        Icons.arrow_back,
+                        Icons.science,
                         color: Colors.white,
                       ),
-                      onPressed: stop_provider.hideNearStops,
                     )
-                  : stop_provider.isStopInfoVisible
+                  ],
+                  leading: stop_provider.isNearStopsVisible
                       ? IconButton(
                           icon: const Icon(
                             Icons.arrow_back,
                             color: Colors.white,
                           ),
-                          onPressed: stop_provider.hideStopInfo,
+                          onPressed: stop_provider.hideNearStops,
                         )
-                      : null,
-              toolbarHeight: 45,
-              title: const Text('ubus',
-                  style: const TextStyle(
-                      fontFamily: 'Flix', color: Colors.white, fontSize: 37)),
-              centerTitle: true,
-              backgroundColor: const Color(0xFF0057DA),
-            ),
-            body: userLoc_provider.userLoc.latitude == 0.0
-                ? const Center(
-                    child: const SpinKitRing(
-                      color: Colors.blue,
-                      size: 50.0,
-                    ),
-                  )
-                : Column(
-                    children: [
-                      Expanded(
-                        flex: stop_provider.isNearStopsVisible ? 2 : 5,
-                        child: GoogleMap(
-                          mapToolbarEnabled: false,
-                          myLocationEnabled: true,
-                          myLocationButtonEnabled: true,
-                          onMapCreated: ((GoogleMapController controller) =>
-                              _mapController.complete(controller)),
-                          initialCameraPosition: CameraPosition(
-                              target: userLoc_provider.userLoc, zoom: 15),
-                          zoomControlsEnabled: false,
-                          markers: {
-                            ...stops_t.map(
-                              (stp) {
-                                return Marker(
-                                    markerId: MarkerId(stp.name),
-                                    onTap: () {
-                                      showModalBottomSheet(
-                                        shape: const LinearBorder(
-                                            side: BorderSide.none),
-                                        context: context,
-                                        builder: (context) =>
-                                            SingleChildScrollView(
-                                          child: StopInfo(
-                                              stp.name,
-                                              PointLatLng(stp.coords.latitude,
-                                                  stp.coords.longitude)),
-                                        ),
-                                      );
-                                    },
-                                    position: stp.coords,
-                                    icon: _stopMarkerIcon);
+                      : stop_provider.isStopInfoVisible
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.arrow_back,
+                                color: Colors.white,
+                              ),
+                              onPressed: stop_provider.hideStopInfo,
+                            )
+                          : null,
+                  toolbarHeight: 45,
+                  title: const Text(
+                    'ubus',
+                    style: const TextStyle(
+                        fontFamily: 'Flix', color: Colors.white, fontSize: 37),
+                  ),
+                  centerTitle: true,
+                  backgroundColor: const Color(0xFF0057DA),
+                ),
+                body: userLoc_provider.userLoc.latitude == 0.0
+                    ? const Center(
+                        child: const SpinKitRing(
+                          color: Colors.blue,
+                          size: 50.0,
+                        ),
+                      )
+                    : Column(
+                        children: [
+                          Expanded(
+                            flex: stop_provider.isNearStopsVisible ? 2 : 5,
+                            child: GoogleMap(
+                              mapToolbarEnabled: false,
+                              myLocationEnabled: true,
+                              myLocationButtonEnabled: true,
+                              onMapCreated: ((GoogleMapController controller) =>
+                                  _mapController.complete(controller)),
+                              initialCameraPosition: CameraPosition(
+                                  target: userLoc_provider.userLoc, zoom: 15),
+                              zoomControlsEnabled: false,
+                              markers: {
+                                ...stops_t.map(
+                                  (stp) {
+                                    return Marker(
+                                        markerId: MarkerId(stp.name),
+                                        onTap: () {
+                                          showModalBottomSheet(
+                                            shape: const LinearBorder(
+                                                side: BorderSide.none),
+                                            context: context,
+                                            builder: (context) =>
+                                                SingleChildScrollView(
+                                              child: StopInfo(
+                                                  stp.name,
+                                                  PointLatLng(
+                                                      stp.coords.latitude,
+                                                      stp.coords.longitude)),
+                                            ),
+                                          );
+                                        },
+                                        position: stp.coords,
+                                        icon: _stopMarkerIcon);
+                                  },
+                                ),
+                                if (activeBuses.isEmpty)
+                                  emptyMarker
+                                else
+                                  ...activeBuses.map((aB) {
+                                    return Marker(
+                                        markerId: MarkerId('Ônibus'),
+                                        position: LatLng(aB['coords'].latitude,
+                                            aB['coords'].longitude),
+                                        icon: _busMarkerIcon);
+                                  })
+                              },
+                              polylines:
+                                  stop_provider.stopCoords.latitude != 0.0
+                                      ? Set<Polyline>.of(polylines.values)
+                                      : {},
+                              polygons: {
+                                ...regions_points.map(
+                                  (rp) {
+                                    return Polygon(
+                                        polygonId: PolygonId(rp.name),
+                                        points: rp.points,
+                                        fillColor:
+                                            Color.fromARGB(156, 33, 149, 243),
+                                        strokeColor:
+                                            Color.fromARGB(60, 0, 0, 0),
+                                        strokeWidth: 2);
+                                  },
+                                )
                               },
                             ),
-                          },
-                          polylines: stop_provider.stopCoords.latitude != 0.0
-                              ? Set<Polyline>.of(polylines.values)
-                              : {},
-                          polygons: {
-                            ...regions_points.map((rp) {
-                              return Polygon(
-                                  polygonId: PolygonId(rp.name),
-                                  points: rp.points,
-                                  fillColor: Color.fromARGB(6, 33, 149, 243),
-                                  strokeColor: Color.fromARGB(6, 0, 0, 0),
-                                  strokeWidth: 2);
-                            })
-                          },
-                        ),
+                          ),
+                          Expanded(child: BottomMenu())
+                        ],
                       ),
-                      Expanded(child: BottomMenu())
-                    ],
-                  ),
-          );
-        });
+              );
+            });
+      },
+    );
   }
 
   // || GoogleMap Services||
@@ -200,10 +245,17 @@ class _UserMapPageState extends State<UserMapPage> {
         .asUint8List();
   }
 
-  _customMarkerIcon() async {
+  _customStopMarkerIcon() async {
     final Uint8List customIcon =
         await getBytesFromAssets("assets/Bus_marker.png", 120);
     _stopMarkerIcon = BitmapDescriptor.fromBytes(customIcon);
+    setState(() {});
+  }
+
+  _customBusMarkerIcon() async {
+    final Uint8List customIcon =
+        await getBytesFromAssets("assets/bus_LocMark.png", 120);
+    _busMarkerIcon = BitmapDescriptor.fromBytes(customIcon);
     setState(() {});
   }
 
@@ -223,14 +275,17 @@ class _UserMapPageState extends State<UserMapPage> {
 
   void getCurrentPosition() async {
     final userLoc_provider = context.read<UserLocationProvider>();
+    final region_provider = context.read<RegionProvider>();
 
     await userLoc_provider.getCurrentLocation();
   }
 
-  UpdateLocation() async {
+  void UpdateLocation() async {
     final userLoc_provider = context.read<UserLocationProvider>();
 
-    await userLoc_provider.updateLocation(cameraFunction: _cameraToPosition);
+    await userLoc_provider.updateLocation(
+      cameraFunction: _cameraToPosition,
+    );
   }
 
   // Polyline Section
@@ -253,9 +308,11 @@ class _UserMapPageState extends State<UserMapPage> {
           .getDistance_n_Duration(result.distance, result.duration);
 
       if (result.points.isNotEmpty) {
-        result.points.forEach((PointLatLng point) {
-          polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-        });
+        result.points.forEach(
+          (PointLatLng point) {
+            polylineCoordinates.add(LatLng(point.latitude, point.longitude));
+          },
+        );
       } else {
         print(result.errorMessage);
       }
@@ -270,8 +327,10 @@ class _UserMapPageState extends State<UserMapPage> {
         color: Colors.blue,
         points: polylineCoordinates,
         width: 8);
-    setState(() {
-      polylines[id] = polyline;
-    });
+    setState(
+      () {
+        polylines[id] = polyline;
+      },
+    );
   }
 }

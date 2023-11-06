@@ -29,10 +29,11 @@ class CardStop extends StatelessWidget {
               ),
             ),
             const SizedBox(
-              width: 10,
+              width: 8,
             ),
             Text(
               title,
+              textAlign: TextAlign.center,
               softWrap: true,
               style: const TextStyle(
                 fontWeight: FontWeight.w500,

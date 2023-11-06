@@ -5,6 +5,7 @@ import 'package:ubus/misc/consts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:ubus/pages/HomePage.dart';
 import 'package:ubus/providers/BusDriverProvider.dart';
+import 'package:ubus/providers/RegionProvider.dart';
 import 'package:ubus/providers/StopProvider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:ubus/providers/UserLocationProvider.dart';
@@ -30,15 +31,25 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
+          create: (context) => BusDriverProvider(),
+        ),
+        ChangeNotifierProvider(
           create: (context) => StopProvider(),
         ),
         ChangeNotifierProvider(
-          create: (context) => BusDriverProvider(),
+          create: (context) => RegionProvider(),
         ),
-        ChangeNotifierProxyProvider<StopProvider, UserLocationProvider>(
-          create: (_) => UserLocationProvider(),
-          update: (_, stop, userLoc) => userLoc!..getStopProvider(stop),
-        )
+        ChangeNotifierProxyProvider<RegionProvider, StopProvider>(
+          create: (_) => StopProvider(),
+          update: (_, regionProv, stopProv) =>
+              stopProv!..getRegionProvider(regionProv),
+        ),
+        ChangeNotifierProxyProvider2<RegionProvider, StopProvider,
+                UserLocationProvider>(
+            create: (context) => UserLocationProvider(),
+            update: (_, region, stop, userLoc) => userLoc!
+              ..getStopProvider(stop)
+              ..getRegionProvider(region))
       ],
       child: MaterialApp(
         title: 'Ubus',

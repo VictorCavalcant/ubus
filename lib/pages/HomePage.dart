@@ -39,16 +39,30 @@ class _HomePageState extends State<HomePage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  HomePageButton('Ir pro Mapa', 'assets/map_1.png', () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => UserMapPage()));
-                  }),
-                  HomePageButton('Motorista', 'assets/driver.png', () {
-                    Navigator.push(
+                  HomePageButton(
+                    'Ir pro Mapa',
+                    Icons.pin_drop_outlined,
+                    () {
+                      Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => ScreenRouter()));
-                  })
+                          builder: (context) => UserMapPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  HomePageButton(
+                    'Motorista',
+                    Icons.person,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ScreenRouter(),
+                        ),
+                      );
+                    },
+                  )
                 ])
           ]),
     );

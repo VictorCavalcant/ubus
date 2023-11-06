@@ -36,82 +36,86 @@ class _SignInPageState extends State<SignInPage> {
         reverse: true,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey_SgIn,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Image.asset(
-                  'assets/icon_1.png',
-                  width: 300,
-                ),
-                TextFormField(
-                  focusNode: emailFocus,
-                  onFieldSubmitted: (value) =>
-                      FocusScope.of(context).requestFocus(passwordFocus),
-                  controller: _emailControllerSgIn,
-                  decoration: getInputDecoration('E-mail'),
-                  validator: (String? value) {
-                    if (value == null) {
-                      return "O e-mail não pode ser vazio";
-                    }
-                    if (value.length < 5) {
-                      return "O e-mail é muito curto";
-                    }
-                    if (!value.contains("@")) {
+          child: Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            child: Form(
+              key: _formKey_SgIn,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Image.asset(
+                    'assets/icon_1.png',
+                    width: 300,
+                  ),
+                  TextFormField(
+                    focusNode: emailFocus,
+                    onFieldSubmitted: (value) =>
+                        FocusScope.of(context).requestFocus(passwordFocus),
+                    controller: _emailControllerSgIn,
+                    decoration: getInputDecoration('E-mail'),
+                    validator: (String? value) {
+                      if (value == null) {
+                        return "O e-mail não pode ser vazio";
+                      }
+                      if (value.length < 5) {
+                        return "O e-mail é muito curto";
+                      }
+                      if (!value.contains("@")) {
+                        return null;
+                      }
                       return null;
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(
-                  height: 30,
-                ),
-                TextFormField(
-                  controller: _passwordControllerSgIn,
-                  onFieldSubmitted: (value) {
-                    buttonIsClicked_SgIn(context);
-                    SystemChannels.textInput.invokeMethod('TextInput.hide');
-                  },
-                  focusNode: passwordFocus,
-                  decoration: getInputDecoration('Senha'),
-                  validator: (String? value) {
-                    if (value == null) {
-                      return "A senha não pode ser retornada vazia";
-                    }
-                    if (value.length < 5) {
-                      return "A senha é muito curta";
-                    }
-                    return null;
-                  },
-                  obscureText: true,
-                ),
-                SizedBox(
-                  height: 30,
-                ),
-                ElevatedButton(
-                    onPressed: () {
+                    },
+                  ),
+                  SizedBox(
+                    height: 30,
+                  ),
+                  TextFormField(
+                    controller: _passwordControllerSgIn,
+                    onFieldSubmitted: (value) {
                       buttonIsClicked_SgIn(context);
                       SystemChannels.textInput.invokeMethod('TextInput.hide');
                     },
-                    child: Text('Entrar')),
-                Divider(
-                  color: Colors.white,
-                ),
-                TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => SignUpPage()));
+                    focusNode: passwordFocus,
+                    decoration: getInputDecoration('Senha'),
+                    validator: (String? value) {
+                      if (value == null) {
+                        return "A senha não pode ser retornada vazia";
+                      }
+                      if (value.length < 5) {
+                        return "A senha é muito curta";
+                      }
+                      return null;
                     },
-                    child: Text(
-                      "Novo motorista? Efetue um cadastro para o sistema",
-                      style: TextStyle(color: Colors.white),
-                    ))
-              ],
+                    obscureText: true,
+                  ),
+                  SizedBox(
+                    height: 30,
+                  ),
+                  ElevatedButton(
+                      onPressed: () {
+                        buttonIsClicked_SgIn(context);
+                        SystemChannels.textInput.invokeMethod('TextInput.hide');
+                      },
+                      child: Text('Entrar')),
+                  Divider(
+                    color: Colors.white,
+                  ),
+                  TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SignUpPage()));
+                      },
+                      child: Text(
+                        "Novo motorista? Efetue um cadastro para o sistema",
+                        style: TextStyle(color: Colors.white),
+                      ))
+                ],
+              ),
             ),
           ),
         ),
