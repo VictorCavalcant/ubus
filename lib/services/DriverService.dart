@@ -25,7 +25,7 @@ class DriverService {
     return drivers.doc(id).update({"active": false});
   }
 
-  Future<void> GetCoords(id, double lat, double long) {
+  Future<void> getCoords(id, double lat, double long) {
     return drivers.doc(id).update({"coords": GeoPoint(lat, long)});
   }
 

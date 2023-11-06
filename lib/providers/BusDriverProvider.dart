@@ -1,12 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:ubus/services/DriverService.dart';
 
 class BusDriverProvider extends ChangeNotifier {
   LatLng? driverLoc;
-  String? Driver_name;
+  String? driver_name;
+  String? driver_id;
+  bool isActive = false;
 
-  BusDriverProvider({this.driverLoc, this.Driver_name});
+  BusDriverProvider({this.driverLoc, this.driver_name});
+
+  getStatus(bool value) {
+    isActive = value;
+  }
+
+  getDriverID(dynamic id) {
+    driver_id = id;
+  }
 
   Future<void> getCurrentLocation() async {
     Position? _currentL = await Geolocator.getCurrentPosition(
@@ -16,8 +29,10 @@ class BusDriverProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateLocation(
-      {Future<void> Function()? cameraFunction, dynamic addMarker}) async {
+  Future<void> updateLocation({
+    Future<void> Function()? cameraFunction,
+    dynamic addMarker,
+  }) async {
     Geolocator.getPositionStream(
         locationSettings: AndroidSettings(
       accuracy: LocationAccuracy.best,
@@ -26,9 +41,20 @@ class BusDriverProvider extends ChangeNotifier {
       useMSLAltitude: true,
     )).listen(
       (Position position) async {
+        print("Position --> $position");
         driverLoc = await LatLng(position.latitude, position.longitude);
         cameraFunction!();
-        addMarker(position!);
+        addMarker(position);
+        print("DriverLoc --> $driverLoc");
+        print(isActive);
+        print("Driver ID ----> $driver_id");
+        if (isActive) {
+          print("estou ativo");
+          await DriverService()
+              .getCoords(driver_id, driverLoc!.latitude, driverLoc!.longitude);
+        } else {
+          print("estou inativo");
+        }
         notifyListeners();
       },
     );

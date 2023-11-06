@@ -31,7 +31,6 @@ class _DriverMapPageState extends State<DriverMapPage> {
   LatLng? _currentP;
   final _currentDriverName = FirebaseAuth.instance.currentUser!.displayName;
   final _currentDriverId = FirebaseAuth.instance.currentUser!.uid;
-  bool isActive = false;
   Marker Bus_Marker = Marker(
     markerId: MarkerId(''),
   );
@@ -55,6 +54,7 @@ class _DriverMapPageState extends State<DriverMapPage> {
     updatePosition();
     SystemChannels.textInput.invokeMethod('TextInput.hide');
     _customMarkerIcon();
+    context.read<BusDriverProvider>().getDriverID(_currentDriverId);
   }
 
   BitmapDescriptor _BusLocMarker = BitmapDescriptor.defaultMarker;
@@ -71,143 +71,141 @@ class _DriverMapPageState extends State<DriverMapPage> {
   Widget build(BuildContext context) {
     final driver_provider = Provider.of<BusDriverProvider>(context);
     return StreamBuilder<DocumentSnapshot>(
-        stream: DriverService().getDriversStream(_currentDriverId),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Scaffold(
-              body: const Center(
-                child: const SpinKitRing(
-                  color: Colors.blue,
-                  size: 50.0,
-                ),
-              ),
-            );
-          }
-
-
-          final driverDocument = snapshot.data;
-
-          isActive = driverDocument!["active"];
-
-          if (!isActive) {
-            DriverService().ResetCoords(_currentDriverId);
-          }
-
+      stream: DriverService().getDriversStream(_currentDriverId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
           return Scaffold(
-            drawer: Drawer(
-              child: ListView(
-                children: [
-                  ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: primaryColor,
-                      child: Icon(
-                        Icons.person,
-                        color: Colors.white,
-                      ),
+            body: const Center(
+              child: const SpinKitRing(
+                color: Colors.blue,
+                size: 50.0,
+              ),
+            ),
+          );
+        }
+
+        final driverDocument = snapshot.data;
+
+        driver_provider.getStatus(driverDocument!["active"]);
+
+        if (!driver_provider.isActive) {
+          DriverService().ResetCoords(_currentDriverId);
+        }
+
+        return Scaffold(
+          drawer: Drawer(
+            child: ListView(
+              children: [
+                ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: primaryColor,
+                    child: Icon(
+                      Icons.person,
+                      color: Colors.white,
                     ),
-                    title: Text('${_currentDriverName}'),
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.logout),
-                    title: const Text("Sair"),
-                    onTap: () {
-                      AuthService().signOut();
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SignInPage(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-            floatingActionButton: Padding(
-              padding: const EdgeInsets.only(top: 80),
-              child: SizedBox(
-                width: 40,
-                height: 40,
-                child: FloatingActionButton(
-                    child: const Icon(Icons.gps_fixed),
-                    onPressed: () {
-                      GetClocation();
-                    }),
-              ),
-            ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
-            appBar: AppBar(
-              actions: [
-                IconButton(
-                  onPressed: testeFunction,
-                  icon: const Icon(Icons.science),
-                )
+                  title: Text('${_currentDriverName}'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text("Sair"),
+                  onTap: () {
+                    AuthService().signOut();
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SignInPage(),
+                      ),
+                    );
+                  },
+                ),
               ],
-              iconTheme: const IconThemeData(color: Colors.white),
-              toolbarHeight: 45,
-              title: const Text('ubus',
-                  style: const TextStyle(
-                      fontFamily: 'Flix', color: Colors.white, fontSize: 37)),
-              centerTitle: true,
-              backgroundColor: const Color(0xFF0057DA),
             ),
-            body: driver_provider.driverLoc == null
-                ? const Center(
-                    child: const SpinKitRing(
-                      color: Colors.blue,
-                      size: 50.0,
+          ),
+          floatingActionButton: Padding(
+            padding: const EdgeInsets.only(top: 80),
+            child: SizedBox(
+              width: 40,
+              height: 40,
+              child: FloatingActionButton(
+                  child: const Icon(Icons.gps_fixed),
+                  onPressed: () {
+                    GetClocation();
+                  }),
+            ),
+          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+          appBar: AppBar(
+            actions: [
+              IconButton(
+                onPressed: testeFunction,
+                icon: const Icon(Icons.science),
+              )
+            ],
+            iconTheme: const IconThemeData(color: Colors.white),
+            toolbarHeight: 45,
+            title: const Text('ubus',
+                style: const TextStyle(
+                    fontFamily: 'Flix', color: Colors.white, fontSize: 37)),
+            centerTitle: true,
+            backgroundColor: const Color(0xFF0057DA),
+          ),
+          body: driver_provider.driverLoc == null
+              ? const Center(
+                  child: const SpinKitRing(
+                    color: Colors.blue,
+                    size: 50.0,
+                  ),
+                )
+              : Column(
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: GoogleMap(
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: false,
+                          mapToolbarEnabled: false,
+                          onMapCreated: ((GoogleMapController controller) =>
+                              _mapController.complete(controller)),
+                          initialCameraPosition: CameraPosition(
+                              target: driver_provider.driverLoc!, zoom: 15),
+                          zoomControlsEnabled: false,
+                          markers: marker),
                     ),
-                  )
-                : Column(
-                    children: [
-                      Expanded(
-                        flex: 5,
-                        child: GoogleMap(
-                            myLocationEnabled: true,
-                            myLocationButtonEnabled: false,
-                            mapToolbarEnabled: false,
-                            onMapCreated: ((GoogleMapController controller) =>
-                                _mapController.complete(controller)),
-                            initialCameraPosition: CameraPosition(
-                                target: driver_provider.driverLoc!, zoom: 15),
-                            zoomControlsEnabled: false,
-                            markers: marker),
-                      ),
-                      Expanded(
-                        child: Container(
-                          height: 60,
-                          padding: const EdgeInsets.all(6),
-                          color: const Color(0xFF0057DA),
-                          child: Center(
-                            child: ClipOval(
-                              child: Material(
-                                color: !isActive
-                                    ? Colors.green
-                                    : Colors.red, // Button color
-                                child: InkWell(
-                                  onTap: () {
-                                    DriverService().ToggleActive(
-                                        _currentDriverId, isActive);
-                                    if (!isActive) {
-                                      DriverService().GetCoords(
-                                          _currentDriverId,
-                                          driver_provider.driverLoc!.latitude,
-                                          driver_provider.driverLoc!.longitude);
-                                    }
-                                  },
-                                  child: SizedBox(
-                                    width: 100,
-                                    height: 100,
-                                    child: Center(
-                                      child: Text(
-                                        !driverDocument["active"]
-                                            ? "INICIAR"
-                                            : "PARAR",
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20),
-                                      ),
+                    Expanded(
+                      child: Container(
+                        height: 60,
+                        padding: const EdgeInsets.all(6),
+                        color: const Color(0xFF0057DA),
+                        child: Center(
+                          child: ClipOval(
+                            child: Material(
+                              color: !driver_provider.isActive
+                                  ? Colors.green
+                                  : Colors.red, // Button color
+                              child: InkWell(
+                                onTap: () {
+                                  DriverService().ToggleActive(_currentDriverId,
+                                      driver_provider.isActive);
+                                  if (!driver_provider.isActive) {
+                                    DriverService().getCoords(
+                                        _currentDriverId,
+                                        driver_provider.driverLoc!.latitude,
+                                        driver_provider.driverLoc!.longitude);
+                                  }
+                                },
+                                child: SizedBox(
+                                  width: 100,
+                                  height: 100,
+                                  child: Center(
+                                    child: Text(
+                                      !driverDocument["active"]
+                                          ? "INICIAR"
+                                          : "PARAR",
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20),
                                     ),
                                   ),
                                 ),
@@ -215,11 +213,13 @@ class _DriverMapPageState extends State<DriverMapPage> {
                             ),
                           ),
                         ),
-                      )
-                    ],
-                  ),
-          );
-        });
+                      ),
+                    )
+                  ],
+                ),
+        );
+      },
+    );
   }
 
   // || GoogleMap Services||
@@ -267,6 +267,8 @@ class _DriverMapPageState extends State<DriverMapPage> {
     final driver_provider = context.read<BusDriverProvider>();
 
     await driver_provider.updateLocation(
-        cameraFunction: _cameraToPosition, addMarker: addMarker);
+      cameraFunction: _cameraToPosition,
+      addMarker: addMarker,
+    );
   }
 }

@@ -275,7 +275,6 @@ class _UserMapPageState extends State<UserMapPage> {
 
   void getCurrentPosition() async {
     final userLoc_provider = context.read<UserLocationProvider>();
-    final region_provider = context.read<RegionProvider>();
 
     await userLoc_provider.getCurrentLocation();
   }
