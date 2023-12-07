@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ubus/components/BottomMenuItem.dart';
-import 'package:ubus/pages/SearchPage.dart';
 import 'package:ubus/providers/StopProvider.dart';
 
 class MainMenu extends StatelessWidget {
@@ -15,11 +14,6 @@ class MainMenu extends StatelessWidget {
       children: [
         MenuItem('Paradas Próximas', 'assets/bus-stop.png',
             context.read<StopProvider>().showNearStops),
-        const VerticalDivider(),
-        MenuItem('Buscar Ônibus', 'assets/bus_Search2.png', () {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => SearchBus()));
-        })
       ],
     );
   }

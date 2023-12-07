@@ -10,6 +10,7 @@ class StopService {
       FirebaseFirestore.instance.collection("stop-regions");
   final stop_group = FirebaseFirestore.instance.collectionGroup('stops');
   List stops = [];
+  List<String> regionsNames = [];
 
   Future getCollectionData({dynamic function}) async {
     List<Stop> Ceara_Osvaldo_Cruz = [];
@@ -36,20 +37,32 @@ class StopService {
       );
     }
 
-    for (var stop in stops_t) {
-      if (stop.region == "Ceará - Osvaldo Cruz") {
-        Ceara_Osvaldo_Cruz.add(stop);
-      } else if (stop.region == "UESPI - UFDPAR") {
-        Uespi_UFDPAR.add(stop);
-      }
+    QuerySnapshot querySnapshot = await stops_regions.get();
+
+    for (var doc in querySnapshot.docs) {
+      Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+      regionsNames.add(data['name']);
+      print("Dados: ${data['name']}");
     }
 
-    regions_stops.addAll([
-      RegionStops("Ceará - Osvaldo Cruz", Ceara_Osvaldo_Cruz),
-      RegionStops("UESPI - UFDPAR", Uespi_UFDPAR)
-    ].toList());
+    // for (var stop in stops_t) {
+    //   if (stop.region == "Ceará - Osvaldo Cruz") {
+    //     Ceara_Osvaldo_Cruz.add(stop);
+    //   } else if (stop.region == "UESPI - UFDPAR") {
+    //     Uespi_UFDPAR.add(stop);
+    //   }
+    // }
 
-    await function();
+    for (var regionName in regionsNames) {
+      final stopsFilter =
+          stops_t.where((stp) => stp.region == regionName).toList();
+      regions_stops.add(RegionStops(regionName, stopsFilter));
+    }
+
+    // regions_stops.addAll([
+    //   RegionStops("Ceará - Osvaldo Cruz", Ceara_Osvaldo_Cruz),
+    //   RegionStops("UESPI - UFDPAR", Uespi_UFDPAR)
+    // ].toList());
   }
 
   Stream<QuerySnapshot> getStopsStream() {

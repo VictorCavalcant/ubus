@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mpt;
 import 'package:ubus/data/regions_points.dart';
 import 'package:ubus/data/regions_stops.dart';
 import 'package:ubus/models/RegionStops.dart';
 import 'package:ubus/models/Stop.dart';
-import 'package:ubus/providers/UserLocationProvider.dart';
 
 class RegionProvider extends ChangeNotifier {
   bool isInTheArea = false;
@@ -21,7 +19,6 @@ class RegionProvider extends ChangeNotifier {
 
   checkUpdatedLocation(dynamic currentLoc) async {
     int i = 0;
-    print("PRINT DE CURRENT LOC ---> $currentLoc");
     while (i < regions_points.length) {
       List<mpt.LatLng> convertedPolygonPoints = regions_points[i]
           .points

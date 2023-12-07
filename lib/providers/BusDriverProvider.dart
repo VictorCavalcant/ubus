@@ -41,13 +41,10 @@ class BusDriverProvider extends ChangeNotifier {
       useMSLAltitude: true,
     )).listen(
       (Position position) async {
-        print("Position --> $position");
         driverLoc = await LatLng(position.latitude, position.longitude);
         cameraFunction!();
         addMarker(position);
-        print("DriverLoc --> $driverLoc");
         print(isActive);
-        print("Driver ID ----> $driver_id");
         if (isActive) {
           print("estou ativo");
           await DriverService()

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:ubus/misc/SplashScreen.dart';
 import 'package:ubus/misc/consts.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:ubus/pages/HomePage.dart';
 import 'package:ubus/providers/BusDriverProvider.dart';
 import 'package:ubus/providers/RegionProvider.dart';
 import 'package:ubus/providers/StopProvider.dart';

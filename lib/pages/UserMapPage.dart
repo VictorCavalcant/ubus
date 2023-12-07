@@ -157,7 +157,7 @@ class _UserMapPageState extends State<UserMapPage> {
                     : Column(
                         children: [
                           Expanded(
-                            flex: stop_provider.isNearStopsVisible ? 2 : 5,
+                            flex: stop_provider.isNearStopsVisible ? 2 : 4,
                             child: GoogleMap(
                               mapToolbarEnabled: false,
                               myLocationEnabled: true,
